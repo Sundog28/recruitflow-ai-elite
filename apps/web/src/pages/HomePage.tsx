@@ -64,8 +64,18 @@ export default function HomePage() {
   const [reportLoading, setReportLoading] = useState(false)
 
   useEffect(() => {
-    void getModelInfo().then(setModelInfo).catch(() => undefined)
-    void getHistory().then(setHistoryItems).catch(() => undefined)
+    void getModelInfo()
+      .then(setModelInfo)
+      .catch((err) => {
+        console.error('model-info failed:', err)
+        setError('Could not load model info from the backend.')
+      })
+
+    void getHistory()
+      .then(setHistoryItems)
+      .catch((err) => {
+        console.error('history failed:', err)
+      })
   }, [])
 
   const handleAnalyze = async () => {
@@ -79,8 +89,9 @@ export default function HomePage() {
       setRecruiterReport(null)
       const history = await getHistory()
       setHistoryItems(history)
-    } catch {
-      setError('Could not analyze right now. Make sure the API is running on port 8000.')
+    } catch (err) {
+      console.error('analyze failed:', err)
+      setError('Could not analyze right now. Check the backend connection.')
     } finally {
       setLoading(false)
     }
@@ -91,8 +102,9 @@ export default function HomePage() {
     setError(null)
     try {
       setRankResult(await rankJobs(resumeText, rankJobsState))
-    } catch {
-      setError('Ranking failed. Check the API and try again.')
+    } catch (err) {
+      console.error('rank failed:', err)
+      setError('Ranking failed. Check the backend and try again.')
     } finally {
       setRankLoading(false)
     }
@@ -107,8 +119,9 @@ export default function HomePage() {
         .filter(Boolean)
 
       setImprovedBullets(await improveBullets(bulletList, targetRole))
-    } catch {
-      setError('Bullet improvement failed. Check the API and try again.')
+    } catch (err) {
+      console.error('improve bullets failed:', err)
+      setError('Bullet improvement failed. Check the backend and try again.')
     }
   }
 
@@ -117,8 +130,9 @@ export default function HomePage() {
     setError(null)
     try {
       setAtsResult(await optimizeATS(resumeText, jobDescription))
-    } catch {
-      setError('ATS optimization failed. Check the API and try again.')
+    } catch (err) {
+      console.error('ats failed:', err)
+      setError('ATS optimization failed. Check the backend and try again.')
     } finally {
       setAtsLoading(false)
     }
@@ -140,8 +154,9 @@ export default function HomePage() {
         strengths: result.strengths,
         weaknesses: result.weaknesses,
       }))
-    } catch {
-      setError('Recruiter report failed. Check the API and try again.')
+    } catch (err) {
+      console.error('recruiter report failed:', err)
+      setError('Recruiter report failed. Check the backend and try again.')
     } finally {
       setReportLoading(false)
     }
