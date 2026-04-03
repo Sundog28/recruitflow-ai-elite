@@ -179,7 +179,7 @@ export default function HomePage() {
             <button onClick={loadDemo} className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 hover:border-indigo-400 hover:text-white">
               Load demo example
             </button>
-            <a href="https://recruitflow-ai-full.fly.dev/docs" target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 hover:border-indigo-400 hover:text-white">
+            <a href="https://recruitflow-ai-elite.onrender.com/docs" target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 hover:border-indigo-400 hover:text-white">
               Open API docs
             </a>
           </div>

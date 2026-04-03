@@ -11,7 +11,7 @@ import type {
 } from '../types/analysis'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://recruitflow-ai-full.fly.dev',
+  baseURL: import.meta.env.VITE_API_URL || "https://recruitflow-ai-elite.onrender.com",
 })
 
 export async function analyzeResume(payload: AnalyzeRequest): Promise<AnalyzeResponse> {
