@@ -1,0 +1,32 @@
+John Treen
+
+SUMMARY
+Software Engineer specializing in AI/ML and Full Stack development with experience building FastAPI services, React applications, ML scoring systems, and cloud deployable software.
+
+SKILLS
+Python
+FastAPI
+React
+TypeScript
+SQL
+PostgreSQL
+Docker
+Git
+Machine Learning
+NLP
+REST APIs
+Linux
+
+PROJECTS
+
+RecruitFlow AI Elite
+Built a full stack AI resume analysis platform using FastAPI and React. Implemented job fit scoring, skill gap detection, and recommendation generation.
+
+WinAudit Pro
+Developed a PowerShell system auditing tool generating HTML and JSON reports for system diagnostics.
+
+EXPERIENCE
+Developed REST APIs, database models, ML scoring pipelines, and frontend dashboards.
+
+EDUCATION
+Self directed software engineering training focused on backend development and AI systems.
