@@ -34,7 +34,7 @@ export async function analyzeResume(jobDescription: string, file: File): Promise
   formData.append("job_description", jobDescription);
   formData.append("resume_file", file);
 
-  const response = await fetch(`${API_BASE}/analyze-upload`, {
+  const response = await fetch(`${API_BASE}/api/v1/analyze-upload`, {
     method: "POST",
     body: formData
   });
