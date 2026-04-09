@@ -72,6 +72,9 @@ async def analyze_upload(
         candidate_name=result.candidate_name,
         resume_filename=resume_file.filename,
         model_version=result.model_version,
+        ats_score=result.ats_score,
+        skill_score=result.skill_score,
+        experience_score=result.experience_score,
     )
 
 
