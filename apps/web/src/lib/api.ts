@@ -50,7 +50,8 @@ export async function analyzeResume(jobDescription: string, file: File): Promise
 export async function getHistory(): Promise<HistoryItem[]> {
   const response = await fetch(`${API_BASE}/api/v1/history`);
   if (!response.ok) {
-    throw new Error("Failed to fetch history");
+    const text = await response.text();
+    throw new Error(text || "Failed to fetch history");
   }
   return response.json();
 }
