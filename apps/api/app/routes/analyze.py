@@ -1,100 +1,97 @@
-import json
-import os
-from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
-from sqlalchemy.orm import Session
-
-from app.db.database import get_db
-from app.db.models import AnalysisRecord
-from app.schemas.analyze import AnalyzeResponse, HistoryItem
-from app.services.scoring_service import ScoringService
-from app.services.parser_service import extract_resume_text
-from app.config import get_settings
+from datetime import datetime
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 router = APIRouter(prefix="/api/v1", tags=["analyze"])
-settings = get_settings()
+
+FAKE_HISTORY: list[dict] = []
+
+
+def extract_skills(text: str) -> list[str]:
+    known = [
+        "python",
+        "fastapi",
+        "react",
+        "typescript",
+        "sql",
+        "docker",
+        "git",
+        "machine learning",
+        "nlp",
+        "rest api",
+    ]
+    lowered = text.lower()
+    return [skill for skill in known if skill in lowered]
 
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "service": settings.app_name, "version": settings.app_version}
+    return {"status": "ok", "service": "RecruitFlow AI Elite API", "version": "1.0.0"}
 
 
-@router.post("/analyze-upload", response_model=AnalyzeResponse)
+@router.get("/history")
+def history():
+    return FAKE_HISTORY
+
+
+@router.post("/analyze-upload")
 async def analyze_upload(
     job_description: str = Form(...),
     resume_file: UploadFile = File(...),
-    db: Session = Depends(get_db),
 ):
+    if not resume_file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded.")
+
+    if not resume_file.filename.lower().endswith(".txt"):
+        raise HTTPException(
+            status_code=400,
+            detail="Temporary demo backend only supports .txt resumes right now."
+        )
+
     content = await resume_file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded resume file is empty.")
 
-    os.makedirs(settings.upload_dir, exist_ok=True)
-
     try:
-        resume_text = extract_resume_text(
-            filename=resume_file.filename,
-            content=content,
-            upload_dir=settings.upload_dir
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse resume file: {str(e)}")
+        resume_text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="Resume text file must be UTF-8.")
 
-    if not resume_text.strip():
-        raise HTTPException(status_code=400, detail="Could not extract readable text from the uploaded resume.")
+    matched_skills = extract_skills(resume_text)
+    missing_skills = [
+        skill for skill in extract_skills(job_description)
+        if skill not in matched_skills
+    ]
 
-    result = ScoringService.score(resume_text=resume_text, job_description=job_description)
+    fit_score = max(40, min(95, 60 + len(matched_skills) * 4 - len(missing_skills) * 2))
+    predicted_label = "strong match" if fit_score >= 80 else "potential match" if fit_score >= 60 else "weak match"
 
-    record = AnalysisRecord(
-        candidate_name=result.candidate_name,
-        resume_filename=resume_file.filename,
-        fit_score=result.fit_score,
-        predicted_label=result.predicted_label,
-        semantic_similarity=result.semantic_similarity,
-        matched_skills=json.dumps(result.matched_skills),
-        missing_skills=json.dumps(result.missing_skills),
-        recommendations=json.dumps(result.recommendations),
-        job_description=job_description,
-    )
-    db.add(record)
-    db.commit()
+    result = {
+        "fit_score": fit_score,
+        "predicted_label": predicted_label,
+        "semantic_similarity": round(min(0.95, 0.45 + len(matched_skills) * 0.05), 4),
+        "matched_skills": matched_skills,
+        "missing_skills": missing_skills,
+        "strengths": [f"Matched skills: {', '.join(matched_skills)}"] if matched_skills else ["Resume contains some relevant technical keywords."],
+        "recommendations": [f"Add or strengthen: {', '.join(missing_skills)}"] if missing_skills else ["Resume aligns well with the sample job description."],
+        "candidate_name": resume_text.splitlines()[0].strip() if resume_text.splitlines() else "Unknown",
+        "resume_filename": resume_file.filename,
+        "model_version": "demo-v1",
+        "ats_score": None,
+        "skill_score": None,
+        "experience_score": None,
+    }
 
-    return AnalyzeResponse(
-        fit_score=result.fit_score,
-        predicted_label=result.predicted_label,
-        semantic_similarity=result.semantic_similarity,
-        matched_skills=result.matched_skills,
-        missing_skills=result.missing_skills,
-        strengths=result.strengths,
-        recommendations=result.recommendations,
-        candidate_name=result.candidate_name,
-        resume_filename=resume_file.filename,
-        model_version=result.model_version,
-        ats_score=None,
-        skill_score=None,
-        experience_score=None,
-    )
+    FAKE_HISTORY.insert(0, {
+        "id": len(FAKE_HISTORY) + 1,
+        "created_at": datetime.utcnow().isoformat(),
+        "candidate_name": result["candidate_name"],
+        "resume_filename": result["resume_filename"],
+        "fit_score": result["fit_score"],
+        "predicted_label": result["predicted_label"],
+        "semantic_similarity": result["semantic_similarity"],
+        "matched_skills": result["matched_skills"],
+        "missing_skills": result["missing_skills"],
+        "recommendations": result["recommendations"],
+    })
 
-@router.get("/history", response_model=list[HistoryItem])
-def history(db: Session = Depends(get_db)):
-    rows = db.query(AnalysisRecord).order_by(AnalysisRecord.created_at.desc()).limit(20).all()
-
-    output = []
-    for row in rows:
-        output.append(
-            HistoryItem(
-                id=row.id,
-                created_at=row.created_at.isoformat(),
-                candidate_name=row.candidate_name,
-                resume_filename=row.resume_filename,
-                fit_score=row.fit_score,
-                predicted_label=row.predicted_label,
-                semantic_similarity=row.semantic_similarity,
-                matched_skills=json.loads(row.matched_skills),
-                missing_skills=json.loads(row.missing_skills),
-                recommendations=json.loads(row.recommendations),
-            )
-        )
-    return output
+    return result
