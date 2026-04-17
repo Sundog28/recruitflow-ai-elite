@@ -11,9 +11,9 @@ export type AnalyzeResponse = {
   candidate_name?: string | null;
   resume_filename?: string | null;
   model_version: string;
-  ats_score?: number;
-  skill_score?: number;
-  experience_score?: number;
+  ats_score?: number | null;
+  skill_score?: number | null;
+  experience_score?: number | null;
 };
 
 export type HistoryItem = {
@@ -36,22 +36,25 @@ export async function analyzeResume(jobDescription: string, file: File): Promise
 
   const response = await fetch(`${API_BASE}/api/v1/analyze-upload`, {
     method: "POST",
-    body: formData
+    body: formData,
   });
 
+  const text = await response.text();
+
   if (!response.ok) {
-    const text = await response.text();
     throw new Error(text || "Analysis failed");
   }
 
-  return response.json();
+  return JSON.parse(text);
 }
 
 export async function getHistory(): Promise<HistoryItem[]> {
   const response = await fetch(`${API_BASE}/api/v1/history`);
+  const text = await response.text();
+
   if (!response.ok) {
-    const text = await response.text();
     throw new Error(text || "Failed to fetch history");
   }
-  return response.json();
+
+  return JSON.parse(text);
 }
