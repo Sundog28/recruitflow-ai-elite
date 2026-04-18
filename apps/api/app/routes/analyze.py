@@ -6,8 +6,6 @@ from docx import Document
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pypdf import PdfReader
 
-from app.services.semantic_service import semantic_similarity
-
 router = APIRouter(prefix="/api/v1", tags=["analyze"])
 
 FAKE_HISTORY: list[dict] = []
@@ -163,6 +161,12 @@ def estimate_education_signal(resume_text: str) -> int:
     return min(100, 20 + hits * 10)
 
 
+def compute_semantic_similarity(skill_score: int, experience_score: int, education_score: int) -> float:
+    raw = (skill_score * 0.55) + (experience_score * 0.30) + (education_score * 0.15)
+    similarity = raw / 100
+    return round(max(0.20, min(0.98, similarity)), 4)
+
+
 def label_from_score(score: int) -> str:
     if score >= 80:
         return "strong match"
@@ -171,12 +175,7 @@ def label_from_score(score: int) -> str:
     return "weak match"
 
 
-def build_strengths(
-    matched_skills: list[str],
-    experience_score: int,
-    education_score: int,
-    semantic_score: float,
-) -> list[str]:
+def build_strengths(matched_skills: list[str], experience_score: int, education_score: int) -> list[str]:
     strengths: list[str] = []
 
     if matched_skills:
@@ -190,18 +189,10 @@ def build_strengths(
     if education_score >= 60:
         strengths.append("Resume includes education or certification signals relevant to technical roles.")
 
-    if semantic_score >= 0.65:
-        strengths.append("Resume content shows meaningful semantic alignment with the job description.")
-
     return strengths
 
 
-def build_recommendations(
-    missing_skills: list[str],
-    experience_score: int,
-    required_years: int | None,
-    semantic_score: float,
-) -> list[str]:
+def build_recommendations(missing_skills: list[str], experience_score: int, required_years: int | None) -> list[str]:
     recommendations: list[str] = []
 
     if missing_skills:
@@ -212,15 +203,12 @@ def build_recommendations(
     if required_years and required_years >= 3 and experience_score < 70:
         recommendations.append("Add more evidence of hands-on engineering experience tied to job requirements.")
 
-    if semantic_score < 0.5:
-        recommendations.append("Improve project and role descriptions so the resume aligns more closely with the target role.")
-
     return recommendations
 
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "service": "RecruitFlow AI Elite API", "version": "1.3.0"}
+    return {"status": "ok", "service": "RecruitFlow AI Elite API", "version": "1.2.0"}
 
 
 @router.get("/history")
@@ -255,27 +243,21 @@ async def analyze_upload(
     experience_score = estimate_resume_experience_score(resume_text, required_years)
     education_score = estimate_education_signal(resume_text)
 
-    semantic_score, semantic_mode = semantic_similarity(job_description, resume_text)
-
-    ats_score = round(
-        (skill_score * 0.45)
-        + (experience_score * 0.20)
-        + (education_score * 0.10)
-        + ((semantic_score * 100) * 0.25)
-    )
+    ats_score = round((skill_score * 0.60) + (experience_score * 0.25) + (education_score * 0.15))
     fit_score = ats_score
+    semantic_similarity = compute_semantic_similarity(skill_score, experience_score, education_score)
 
     result = {
         "fit_score": fit_score,
         "predicted_label": label_from_score(fit_score),
-        "semantic_similarity": semantic_score,
+        "semantic_similarity": semantic_similarity,
         "matched_skills": matched_skills,
         "missing_skills": missing_skills,
-        "strengths": build_strengths(matched_skills, experience_score, education_score, semantic_score),
-        "recommendations": build_recommendations(missing_skills, experience_score, required_years, semantic_score),
+        "strengths": build_strengths(matched_skills, experience_score, education_score),
+        "recommendations": build_recommendations(missing_skills, experience_score, required_years),
         "candidate_name": resume_text.splitlines()[0].strip() if resume_text.splitlines() else "Unknown",
         "resume_filename": resume_file.filename,
-        "model_version": semantic_mode,
+        "model_version": "demo-v1.2",
         "ats_score": ats_score,
         "skill_score": skill_score,
         "experience_score": experience_score,
