@@ -15,6 +15,12 @@ function scoreLabel(score: number) {
   return "weak match";
 }
 
+function scoreTone(score: number) {
+  if (score >= 80) return "text-emerald-300 bg-emerald-500/15";
+  if (score >= 60) return "text-amber-300 bg-amber-500/15";
+  return "text-rose-300 bg-rose-500/15";
+}
+
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_0_20px_rgba(139,92,246,0.08)]">
@@ -48,6 +54,59 @@ function ProgressBar({ label, value }: { label: string; value: number }) {
           style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+function Gauge({ score }: { score: number }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Overall Fit</p>
+      <div className="mt-4">
+        <div className="mb-3 flex items-end justify-between">
+          <span className="text-6xl font-black text-white">{score}</span>
+          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${scoreTone(score)}`}>
+            {scoreLabel(score)}
+          </span>
+        </div>
+        <div className="h-4 rounded-full bg-white/10">
+          <div
+            className="h-4 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all"
+            style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExplainCard({
+  title,
+  value,
+  description,
+}: {
+  title: string;
+  value: number | string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{title}</p>
+          <p className="mt-2 text-3xl font-bold text-white">{value}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
+    </div>
+  );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+      <h3 className="mb-4 text-2xl font-semibold text-white">{title}</h3>
+      {children}
     </div>
   );
 }
@@ -180,6 +239,9 @@ export default function App() {
                   className="text-sm text-slate-200"
                 />
                 {resumeFile ? <p className="mt-3 text-base text-slate-300">{resumeFile.name}</p> : null}
+                <p className="mt-3 text-sm text-slate-400">
+                  Upload a plain text, PDF, or DOCX resume. For best results, use resumes with selectable text.
+                </p>
               </div>
             </div>
 
@@ -204,35 +266,56 @@ export default function App() {
         </section>
 
         {result ? (
-          <section className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <h2 className="text-4xl font-bold">Analysis Result</h2>
                 <p className="mt-2 text-lg text-slate-300">
                   Candidate: {result.candidate_name ?? "Unknown"} • File: {result.resume_filename ?? "N/A"}
                 </p>
               </div>
-              <span className="rounded-full bg-emerald-500/20 px-4 py-2 text-lg font-semibold text-emerald-300">
+              <span className={`rounded-full px-4 py-2 text-lg font-semibold ${scoreTone(result.fit_score)}`}>
                 {scoreLabel(result.fit_score)}
               </span>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <StatCard label="Fit Score" value={result.fit_score} />
-              <StatCard label="ATS Score" value={derivedAts} />
-              <StatCard label="Semantic Similarity" value={result.semantic_similarity} />
-              <StatCard label="Model Version" value={result.model_version} />
+            <div className="grid gap-6 xl:grid-cols-[1.2fr_2fr]">
+              <Gauge score={result.fit_score} />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <StatCard label="ATS Score" value={derivedAts} />
+                <StatCard label="Semantic Similarity" value={result.semantic_similarity} />
+                <StatCard label="Skill Score" value={derivedSkill} />
+                <StatCard label="Experience Score" value={derivedExperience} />
+              </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
               <ProgressBar label="ATS Alignment" value={derivedAts} />
               <ProgressBar label="Skill Coverage" value={derivedSkill} />
               <ProgressBar label="Experience Match" value={derivedExperience} />
             </div>
 
-            <div className="mt-8 grid gap-8 lg:grid-cols-2">
-              <div>
-                <h3 className="mb-4 text-3xl font-semibold">Matched Skills</h3>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <ExplainCard
+                title="ATS Fit"
+                value={derivedAts}
+                description="Weighted overall fit based on required job skills, experience indicators, and education/certification signals."
+              />
+              <ExplainCard
+                title="Skill Coverage"
+                value={derivedSkill}
+                description="Measures how many required job skills were directly detected in the uploaded resume."
+              />
+              <ExplainCard
+                title="Model Version"
+                value={result.model_version}
+                description="Current scoring engine version used to generate the candidate analysis response."
+              />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <SectionCard title="Matched Skills">
                 <div className="flex flex-wrap gap-3">
                   {result.matched_skills.length ? (
                     result.matched_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="green" />)
@@ -240,10 +323,9 @@ export default function App() {
                     <p className="text-slate-400">No matched skills detected.</p>
                   )}
                 </div>
-              </div>
+              </SectionCard>
 
-              <div>
-                <h3 className="mb-4 text-3xl font-semibold">Missing Skills</h3>
+              <SectionCard title="Missing Skills">
                 <div className="flex flex-wrap gap-3">
                   {result.missing_skills.length ? (
                     result.missing_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="red" />)
@@ -251,33 +333,60 @@ export default function App() {
                     <p className="text-slate-300">None</p>
                   )}
                 </div>
-              </div>
+              </SectionCard>
             </div>
 
-            <div className="mt-8 grid gap-8 lg:grid-cols-2">
-              <div>
-                <h3 className="mb-4 text-3xl font-semibold">Strengths</h3>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <SectionCard title="Strengths">
                 <ul className="list-disc space-y-2 pl-6 text-lg text-slate-300">
                   {result.strengths.map((item, index) => (
                     <li key={`${item}-${index}`}>{item}</li>
                   ))}
                 </ul>
-              </div>
+              </SectionCard>
 
-              <div>
-                <h3 className="mb-4 text-3xl font-semibold">Recommendations</h3>
+              <SectionCard title="Recommendations">
                 <ul className="list-disc space-y-2 pl-6 text-lg text-slate-300">
                   {result.recommendations.map((item, index) => (
                     <li key={`${item}-${index}`}>{item}</li>
                   ))}
                 </ul>
-              </div>
+              </SectionCard>
             </div>
+
+            <SectionCard title="Why This Score">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl bg-[#04070f] p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Matched Skills</p>
+                  <p className="mt-2 text-3xl font-bold">{result.matched_skills.length}</p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    Direct overlap between the job description and resume skill keywords.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#04070f] p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Missing Skills</p>
+                  <p className="mt-2 text-3xl font-bold">{result.missing_skills.length}</p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    Important job requirements that do not currently appear in the uploaded resume.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#04070f] p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Semantic Similarity</p>
+                  <p className="mt-2 text-3xl font-bold">{result.semantic_similarity}</p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    Lightweight fit estimate based on overall technical alignment and support signals.
+                  </p>
+                </div>
+              </div>
+            </SectionCard>
           </section>
         ) : null}
 
         <section className="mt-10">
-          <h2 className="mb-4 text-4xl font-bold">Recent Analyses</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-4xl font-bold">Recent Analyses</h2>
+            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Recruiter Review Feed</p>
+          </div>
 
           {historyLoading ? (
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-lg text-slate-300">
@@ -298,6 +407,7 @@ export default function App() {
                     <div>
                       <h3 className="text-2xl font-semibold">{item.candidate_name ?? "Unknown Candidate"}</h3>
                       <p className="text-lg text-slate-400">{item.resume_filename ?? "No filename"}</p>
+                      <p className="mt-2 text-sm text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
                     </div>
 
                     <div className="text-right">
@@ -306,15 +416,19 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="mt-5 text-lg text-slate-300">
-                    <p>
-                      <span className="font-semibold text-white">Matched:</span>{" "}
-                      {item.matched_skills.length ? item.matched_skills.join(", ") : "None"}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-semibold text-white">Missing:</span>{" "}
-                      {item.missing_skills.length ? item.missing_skills.join(", ") : "None"}
-                    </p>
+                  <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-2xl bg-[#04070f] p-4">
+                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">Matched</p>
+                      <p className="text-base text-slate-300">
+                        {item.matched_skills.length ? item.matched_skills.join(", ") : "None"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-[#04070f] p-4">
+                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">Missing</p>
+                      <p className="text-base text-slate-300">
+                        {item.missing_skills.length ? item.missing_skills.join(", ") : "None"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
