@@ -29,7 +29,29 @@ export type HistoryItem = {
   recommendations: string[];
 };
 
-export async function analyzeResume(jobDescription: string, file: File): Promise<AnalyzeResponse> {
+async function parseJsonResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const text = await response.text();
+
+  if (!response.ok) {
+    try {
+      const data = JSON.parse(text);
+      throw new Error(data.detail || data.message || fallbackMessage);
+    } catch {
+      throw new Error(text || fallbackMessage);
+    }
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("Server returned invalid JSON.");
+  }
+}
+
+export async function analyzeResume(
+  jobDescription: string,
+  file: File
+): Promise<AnalyzeResponse> {
   const formData = new FormData();
   formData.append("job_description", jobDescription);
   formData.append("resume_file", file);
@@ -39,22 +61,10 @@ export async function analyzeResume(jobDescription: string, file: File): Promise
     body: formData,
   });
 
-  const text = await response.text();
-
-  if (!response.ok) {
-    throw new Error(text || "Analysis failed");
-  }
-
-  return JSON.parse(text);
+  return parseJsonResponse<AnalyzeResponse>(response, "Analysis failed.");
 }
 
 export async function getHistory(): Promise<HistoryItem[]> {
   const response = await fetch(`${API_BASE}/api/v1/history`);
-  const text = await response.text();
-
-  if (!response.ok) {
-    throw new Error(text || "Failed to fetch history");
-  }
-
-  return JSON.parse(text);
+  return parseJsonResponse<HistoryItem[]>(response, "Failed to fetch history.");
 }

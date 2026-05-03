@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.analyze import router as analyze_router
 
-app = FastAPI(title="RecruitFlow AI Elite API", version="1.0.0")
+app = FastAPI(title="RecruitFlow AI Elite API", version="1.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,7 +14,6 @@ app.add_middleware(
 )
 
 app.include_router(analyze_router)
-
 
 @app.get("/")
 def root():

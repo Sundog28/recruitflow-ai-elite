@@ -24,40 +24,38 @@ class ScoringService:
         resume = parse_resume(resume_text)
         job = parse_job_description(job_description)
 
-        matched_skills = sorted(set(resume["skills"]).intersection(set(job["skills"])))
-        missing_skills = sorted(set(job["skills"]) - set(resume["skills"]))
+        resume_skills = set(resume["skills"])
+        job_skills = set(job["skills"])
+
+        matched_skills = sorted(resume_skills.intersection(job_skills))
+        missing_skills = sorted(job_skills - resume_skills)
 
         skill_overlap_ratio = 0.0
-        if job["skills"]:
-            skill_overlap_ratio = len(matched_skills) / len(job["skills"])
+        if job_skills:
+            skill_overlap_ratio = len(matched_skills) / len(job_skills)
 
         try:
             semantic_similarity = SimilarityService.embedding_similarity(
                 resume["normalized_text"],
-                job["normalized_text"]
+                job["normalized_text"],
             )
             model_version = "embedding-hybrid-v2"
         except Exception:
             semantic_similarity = SimilarityService.token_overlap_similarity(
                 resume["normalized_text"],
-                job["normalized_text"]
+                job["normalized_text"],
             )
             model_version = "token-fallback-v2"
 
-        if job["years_signal"] > 0:
-            if resume["years_signal"] >= job["years_signal"]:
-                experience_score = 1.0
-            elif resume["years_signal"] >= max(job["years_signal"] - 1, 0):
-                experience_score = 0.75
-            else:
-                experience_score = 0.45
-        else:
-            experience_score = 0.75
+        experience_score = ScoringService._experience_score(
+            resume_years=resume["years_signal"],
+            job_years=job["years_signal"],
+        )
 
         fit_score = (
-            semantic_similarity * 45 +
-            skill_overlap_ratio * 40 +
-            experience_score * 15
+            semantic_similarity * 45
+            + skill_overlap_ratio * 40
+            + experience_score * 15
         )
 
         fit_score = round(min(max(fit_score, 0), 100), 2)
@@ -69,26 +67,19 @@ class ScoringService:
         else:
             predicted_label = "weak match"
 
-        strengths: List[str] = []
-        if matched_skills:
-            strengths.append(f"Matched key skills: {', '.join(matched_skills[:8])}")
-        if semantic_similarity >= 0.55:
-            strengths.append("Resume content is semantically well aligned with the target role.")
-        if experience_score >= 0.75:
-            strengths.append("Experience level appears reasonably aligned with the job requirement.")
+        strengths = ScoringService._build_strengths(
+            matched_skills=matched_skills,
+            semantic_similarity=semantic_similarity,
+            experience_score=experience_score,
+        )
 
-        recommendations: List[str] = []
-        if missing_skills:
-            recommendations.append(f"Add or strengthen evidence for: {', '.join(missing_skills[:8])}")
-        if semantic_similarity < 0.45:
-            recommendations.append("Rewrite summary and project bullets to better mirror the language of the job description.")
-        if skill_overlap_ratio < 0.5:
-            recommendations.append("Add role-specific tools, frameworks, and measurable achievements relevant to this position.")
-        if resume["years_signal"] == 0 and job["years_signal"] > 0:
-            recommendations.append("Make your experience duration more explicit in your resume bullets or summary.")
-
-        if not strengths:
-            strengths.append("Resume shows partial alignment, but stronger role-specific evidence would improve the score.")
+        recommendations = ScoringService._build_recommendations(
+            missing_skills=missing_skills,
+            semantic_similarity=semantic_similarity,
+            skill_overlap_ratio=skill_overlap_ratio,
+            resume_years=resume["years_signal"],
+            job_years=job["years_signal"],
+        )
 
         return ScoreOutput(
             fit_score=fit_score,
@@ -101,3 +92,81 @@ class ScoringService:
             candidate_name=resume["candidate_name"],
             model_version=model_version,
         )
+
+    @staticmethod
+    def _experience_score(resume_years: int, job_years: int) -> float:
+        if job_years > 0:
+            if resume_years >= job_years:
+                return 1.0
+            if resume_years >= max(job_years - 1, 0):
+                return 0.75
+            return 0.45
+
+        return 0.75
+
+    @staticmethod
+    def _build_strengths(
+        matched_skills: list[str],
+        semantic_similarity: float,
+        experience_score: float,
+    ) -> list[str]:
+        strengths: list[str] = []
+
+        if matched_skills:
+            strengths.append(
+                f"Matched key skills: {', '.join(matched_skills[:8])}"
+            )
+
+        if semantic_similarity >= 0.55:
+            strengths.append(
+                "Resume content is semantically aligned with the target role."
+            )
+
+        if experience_score >= 0.75:
+            strengths.append(
+                "Experience level appears reasonably aligned with the job requirement."
+            )
+
+        if not strengths:
+            strengths.append(
+                "Resume shows partial alignment, but stronger role-specific evidence would improve the score."
+            )
+
+        return strengths
+
+    @staticmethod
+    def _build_recommendations(
+        missing_skills: list[str],
+        semantic_similarity: float,
+        skill_overlap_ratio: float,
+        resume_years: int,
+        job_years: int,
+    ) -> list[str]:
+        recommendations: list[str] = []
+
+        if missing_skills:
+            recommendations.append(
+                f"Add or strengthen evidence for: {', '.join(missing_skills[:8])}"
+            )
+
+        if semantic_similarity < 0.45:
+            recommendations.append(
+                "Rewrite the resume summary and project bullets to better mirror the job description."
+            )
+
+        if skill_overlap_ratio < 0.5:
+            recommendations.append(
+                "Add role-specific tools, frameworks, and measurable achievements relevant to this position."
+            )
+
+        if resume_years == 0 and job_years > 0:
+            recommendations.append(
+                "Make your experience duration more explicit in your resume bullets or summary."
+            )
+
+        if not recommendations:
+            recommendations.append(
+                "Resume is well aligned. Add quantified project outcomes to make it stronger."
+            )
+
+        return recommendations
