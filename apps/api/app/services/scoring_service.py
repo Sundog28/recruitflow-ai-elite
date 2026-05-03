@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-
+from app.services.embedding_service import EmbeddingService
 from app.services.parser_service import parse_job_description, parse_resume
 from app.services.similarity_service import SimilarityService
 
@@ -35,11 +35,11 @@ class ScoringService:
             skill_overlap_ratio = len(matched_skills) / len(job_skills)
 
         try:
-            semantic_similarity = SimilarityService.embedding_similarity(
+            semantic_similarity = EmbeddingService.similarity(
                 resume["normalized_text"],
                 job["normalized_text"],
             )
-            model_version = "embedding-hybrid-v2"
+            model_version = "sentence-transformer-miniLM-v1"
         except Exception:
             semantic_similarity = SimilarityService.token_overlap_similarity(
                 resume["normalized_text"],
