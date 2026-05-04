@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { analyzeResume, getHistory, type AnalyzeResponse, type HistoryItem } from "./lib/api";
+import {
+  analyzeResume,
+  getHistory,
+  rewriteResume,
+  type AnalyzeResponse,
+  type HistoryItem,
+} from "./lib/api";
 
 const demoJobDescription =
   "We are hiring a junior AI/ML engineer with experience in Python, FastAPI, React, TypeScript, SQL, Docker, machine learning, NLP, and REST API development.";
@@ -30,7 +36,13 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function SkillBadge({ skill, tone = "green" }: { skill: string; tone?: "green" | "red" | "purple" }) {
+function SkillBadge({
+  skill,
+  tone = "green",
+}: {
+  skill: string;
+  tone?: "green" | "red" | "purple";
+}) {
   const toneClass =
     tone === "green"
       ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30"
@@ -91,12 +103,8 @@ function ExplainCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-white">{value}</p>
-        </div>
-      </div>
+      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{title}</p>
+      <p className="mt-2 text-3xl font-bold text-white">{value}</p>
       <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
     </div>
   );
@@ -114,11 +122,20 @@ function SectionCard({ title, children }: { title: string; children: React.React
 export default function App() {
   const [jobDescription, setJobDescription] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState("");
+
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  const [rewrittenResume, setRewrittenResume] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [rewriteLoading, setRewriteLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
+
   const [error, setError] = useState("");
+  const [rewriteError, setRewriteError] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
 
   async function loadHistory() {
     try {
@@ -182,12 +199,64 @@ export default function App() {
     }
   }
 
+  async function handleRewrite() {
+    setRewriteError("");
+    setRewrittenResume("");
+    setCopyMessage("");
+
+    if (!resumeText.trim()) {
+      setRewriteError("Please paste resume text before rewriting.");
+      return;
+    }
+
+    if (!jobDescription.trim()) {
+      setRewriteError("Please paste a job description before rewriting.");
+      return;
+    }
+
+    try {
+      setRewriteLoading(true);
+      const response = await rewriteResume(resumeText, jobDescription);
+      setRewrittenResume(response.rewritten_resume);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Rewrite failed.";
+      setRewriteError(message);
+    } finally {
+      setRewriteLoading(false);
+    }
+  }
+
   function handleUseDemo() {
     const blob = new Blob([demoResumeText], { type: "text/plain" });
     const file = new File([blob], "demo_resume.txt", { type: "text/plain" });
+
     setJobDescription(demoJobDescription);
     setResumeFile(file);
+    setResumeText(demoResumeText);
     setError("");
+    setRewriteError("");
+    setCopyMessage("");
+  }
+
+  async function handleCopyRewrite() {
+    if (!rewrittenResume) return;
+    await navigator.clipboard.writeText(rewrittenResume);
+    setCopyMessage("Copied!");
+    window.setTimeout(() => setCopyMessage(""), 1800);
+  }
+
+  function handleDownloadRewrite() {
+    if (!rewrittenResume) return;
+
+    const blob = new Blob([rewrittenResume], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "rewritten_resume.txt";
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -199,28 +268,28 @@ export default function App() {
           </p>
           <h1 className="text-6xl font-black tracking-tight">RecruitFlow AI Elite</h1>
           <p className="mt-4 max-w-4xl text-2xl leading-relaxed text-slate-300">
-            Recruiter-facing AI platform for resume analysis, ATS alignment, skill gap detection, and
-            semantic fit scoring.
+            Recruiter-facing AI platform for resume analysis, ATS alignment, skill gap detection,
+            semantic fit scoring, and AI resume rewriting.
           </p>
         </header>
 
         <section className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.16)]">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h2 className="text-4xl font-bold">Analyze Resume</h2>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleUseDemo}
-                className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20"
-              >
-                Load Demo Resume
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleUseDemo}
+              className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20"
+            >
+              Load Demo Resume
+            </button>
           </div>
 
           <form onSubmit={handleAnalyze} className="space-y-6">
             <div>
-              <label className="mb-2 block text-lg font-medium text-slate-200">Job Description</label>
+              <label className="mb-2 block text-lg font-medium text-slate-200">
+                Job Description
+              </label>
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
@@ -230,7 +299,9 @@ export default function App() {
             </div>
 
             <div>
-              <label className="mb-2 block text-lg font-medium text-slate-200">Resume File (.txt, .pdf, .docx)</label>
+              <label className="mb-2 block text-lg font-medium text-slate-200">
+                Resume File (.txt, .pdf, .docx)
+              </label>
               <div className="rounded-2xl border border-white/10 bg-[#04070f] p-4">
                 <input
                   type="file"
@@ -240,7 +311,8 @@ export default function App() {
                 />
                 {resumeFile ? <p className="mt-3 text-base text-slate-300">{resumeFile.name}</p> : null}
                 <p className="mt-3 text-sm text-slate-400">
-                  Upload a plain text, PDF, or DOCX resume. For best results, use resumes with selectable text.
+                  Upload a plain text, PDF, or DOCX resume. For best results, use resumes with
+                  selectable text.
                 </p>
               </div>
             </div>
@@ -254,7 +326,11 @@ export default function App() {
                 {loading ? "Analyzing..." : "Analyze Resume"}
               </button>
 
-              {loading ? <p className="text-base text-violet-200">Scoring candidate profile and aligning skills...</p> : null}
+              {loading ? (
+                <p className="text-base text-violet-200">
+                  Scoring candidate profile and aligning skills...
+                </p>
+              ) : null}
             </div>
 
             {error ? (
@@ -265,13 +341,98 @@ export default function App() {
           </form>
         </section>
 
+        <section className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(34,197,94,0.12)]">
+          <div className="mb-6">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.35em] text-emerald-400">
+              AI Resume Rewrite
+            </p>
+            <h2 className="text-4xl font-bold">Rewrite Resume for This Job</h2>
+            <p className="mt-3 max-w-3xl text-lg text-slate-300">
+              Paste resume text below and generate an ATS-optimized version tailored to the job
+              description.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <label className="mb-2 block text-lg font-medium text-slate-200">
+                Resume Text
+              </label>
+              <textarea
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                placeholder="Paste resume text here..."
+                className="h-64 w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-lg text-white outline-none transition focus:border-emerald-400/60"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                type="button"
+                onClick={handleRewrite}
+                disabled={rewriteLoading}
+                className="rounded-2xl bg-emerald-500 px-6 py-4 text-lg font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {rewriteLoading ? "Rewriting..." : "Rewrite Resume"}
+              </button>
+
+              {rewriteLoading ? (
+                <p className="text-base text-emerald-200">
+                  Generating tailored resume with AI...
+                </p>
+              ) : null}
+            </div>
+
+            {rewriteError ? (
+              <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-4 text-base text-rose-200">
+                {rewriteError}
+              </div>
+            ) : null}
+
+            {rewrittenResume ? (
+              <div className="rounded-3xl border border-emerald-400/20 bg-[#04070f] p-6">
+                <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <h3 className="text-2xl font-semibold text-white">Rewritten Resume</h3>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    {copyMessage ? (
+                      <span className="text-sm font-semibold text-emerald-300">{copyMessage}</span>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={handleCopyRewrite}
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                      Copy
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDownloadRewrite}
+                      className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400"
+                    >
+                      Download .txt
+                    </button>
+                  </div>
+                </div>
+
+                <pre className="max-h-[600px] overflow-auto whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/30 p-5 text-sm leading-7 text-slate-200">
+                  {rewrittenResume}
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
         {result ? (
           <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <h2 className="text-4xl font-bold">Analysis Result</h2>
                 <p className="mt-2 text-lg text-slate-300">
-                  Candidate: {result.candidate_name ?? "Unknown"} • File: {result.resume_filename ?? "N/A"}
+                  Candidate: {result.candidate_name ?? "Unknown"} • File:{" "}
+                  {result.resume_filename ?? "N/A"}
                 </p>
               </div>
               <span className={`rounded-full px-4 py-2 text-lg font-semibold ${scoreTone(result.fit_score)}`}>
@@ -318,7 +479,9 @@ export default function App() {
               <SectionCard title="Matched Skills">
                 <div className="flex flex-wrap gap-3">
                   {result.matched_skills.length ? (
-                    result.matched_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="green" />)
+                    result.matched_skills.map((skill) => (
+                      <SkillBadge key={skill} skill={skill} tone="green" />
+                    ))
                   ) : (
                     <p className="text-slate-400">No matched skills detected.</p>
                   )}
@@ -328,7 +491,9 @@ export default function App() {
               <SectionCard title="Missing Skills">
                 <div className="flex flex-wrap gap-3">
                   {result.missing_skills.length ? (
-                    result.missing_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="red" />)
+                    result.missing_skills.map((skill) => (
+                      <SkillBadge key={skill} skill={skill} tone="red" />
+                    ))
                   ) : (
                     <p className="text-slate-300">None</p>
                   )}
@@ -357,24 +522,30 @@ export default function App() {
             <SectionCard title="Why This Score">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl bg-[#04070f] p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Matched Skills</p>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+                    Matched Skills
+                  </p>
                   <p className="mt-2 text-3xl font-bold">{result.matched_skills.length}</p>
                   <p className="mt-2 text-sm text-slate-300">
                     Direct overlap between the job description and resume skill keywords.
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#04070f] p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Missing Skills</p>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+                    Missing Skills
+                  </p>
                   <p className="mt-2 text-3xl font-bold">{result.missing_skills.length}</p>
                   <p className="mt-2 text-sm text-slate-300">
                     Important job requirements that do not currently appear in the uploaded resume.
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#04070f] p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Semantic Similarity</p>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+                    Semantic Similarity
+                  </p>
                   <p className="mt-2 text-3xl font-bold">{result.semantic_similarity}</p>
                   <p className="mt-2 text-sm text-slate-300">
-                    Lightweight fit estimate based on overall technical alignment and support signals.
+                    Transformer-based semantic alignment between the resume and job description.
                   </p>
                 </div>
               </div>
@@ -385,7 +556,9 @@ export default function App() {
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-4xl font-bold">Recent Analyses</h2>
-            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Recruiter Review Feed</p>
+            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
+              Recruiter Review Feed
+            </p>
           </div>
 
           {historyLoading ? (
@@ -405,9 +578,15 @@ export default function App() {
                 >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <h3 className="text-2xl font-semibold">{item.candidate_name ?? "Unknown Candidate"}</h3>
-                      <p className="text-lg text-slate-400">{item.resume_filename ?? "No filename"}</p>
-                      <p className="mt-2 text-sm text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
+                      <h3 className="text-2xl font-semibold">
+                        {item.candidate_name ?? "Unknown Candidate"}
+                      </h3>
+                      <p className="text-lg text-slate-400">
+                        {item.resume_filename ?? "No filename"}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-500">
+                        {new Date(item.created_at).toLocaleString()}
+                      </p>
                     </div>
 
                     <div className="text-right">
@@ -418,13 +597,17 @@ export default function App() {
 
                   <div className="mt-5 grid gap-4 lg:grid-cols-2">
                     <div className="rounded-2xl bg-[#04070f] p-4">
-                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">Matched</p>
+                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">
+                        Matched
+                      </p>
                       <p className="text-base text-slate-300">
                         {item.matched_skills.length ? item.matched_skills.join(", ") : "None"}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-[#04070f] p-4">
-                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">Missing</p>
+                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">
+                        Missing
+                      </p>
                       <p className="text-base text-slate-300">
                         {item.missing_skills.length ? item.missing_skills.join(", ") : "None"}
                       </p>

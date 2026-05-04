@@ -29,7 +29,14 @@ export type HistoryItem = {
   recommendations: string[];
 };
 
-async function parseJsonResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
+export type RewriteResponse = {
+  rewritten_resume: string;
+};
+
+async function parseJsonResponse<T>(
+  response: Response,
+  fallbackMessage: string
+): Promise<T> {
   const text = await response.text();
 
   if (!response.ok) {
@@ -62,6 +69,22 @@ export async function analyzeResume(
   });
 
   return parseJsonResponse<AnalyzeResponse>(response, "Analysis failed.");
+}
+
+export async function rewriteResume(
+  resumeText: string,
+  jobDescription: string
+): Promise<RewriteResponse> {
+  const formData = new FormData();
+  formData.append("resume_text", resumeText);
+  formData.append("job_description", jobDescription);
+
+  const response = await fetch(`${API_BASE}/api/v1/rewrite`, {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<RewriteResponse>(response, "Resume rewrite failed.");
 }
 
 export async function getHistory(): Promise<HistoryItem[]> {
