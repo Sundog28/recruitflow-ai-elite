@@ -8,12 +8,35 @@ import {
 } from "./lib/api";
 
 const demoJobDescription =
-  "We are hiring a junior AI/ML engineer with experience in Python, FastAPI, React, TypeScript, SQL, Docker, machine learning, NLP, and REST API development.";
+  "We are hiring a junior AI/ML engineer with experience in Python, FastAPI, React, TypeScript, SQL, Docker, machine learning, NLP, REST API development, cloud deployment, and building production-ready AI tools.";
 
 const demoResumeText = `John Treen
-Software Engineer specializing in AI/ML and Full Stack development.
-Skills: Python, FastAPI, React, TypeScript, SQL, Docker, Git, Machine Learning, NLP, REST API
-Experience: Built FastAPI services, React apps, ML scoring systems, and deployable software.`;
+AI/ML Software Engineer
+
+SUMMARY
+Python developer with experience building FastAPI services, React dashboards, SQL-backed applications, Dockerized APIs, and ML-powered tools for resume analysis and recruiter workflows.
+
+SKILLS
+Python, FastAPI, React, TypeScript, SQL, Docker, Git, REST APIs, Machine Learning, NLP, OpenAI API, API Deployment, Vercel, Render
+
+PROJECTS
+RecruitFlow AI Elite
+- Built an AI-powered recruiting platform that analyzes resumes against job descriptions.
+- Implemented resume parsing for TXT, PDF, and DOCX files.
+- Built scoring logic for ATS alignment, skill coverage, semantic similarity, and experience matching.
+- Added AI resume rewriting using an LLM endpoint.
+- Deployed frontend on Vercel and backend on Render.
+
+Full Stack AI Tools
+- Built React interfaces connected to FastAPI backends.
+- Designed REST APIs for file upload, scoring, history tracking, and AI generation.
+- Used Docker, GitHub, and cloud deployment workflows for production-ready delivery.
+
+EXPERIENCE
+Python / Full Stack Developer
+- Built API-driven applications using Python, FastAPI, React, TypeScript, and SQL.
+- Created ML-powered tools for job matching, NLP analysis, and resume optimization.
+- Improved project quality through production deployment, error handling, and user-focused UI design.`;
 
 function scoreLabel(score: number) {
   if (score >= 80) return "strong match";
@@ -126,7 +149,6 @@ export default function App() {
 
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-
   const [rewrittenResume, setRewrittenResume] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -281,7 +303,7 @@ export default function App() {
               onClick={handleUseDemo}
               className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20"
             >
-              Load Demo Resume
+              Load Strong Demo Resume
             </button>
           </div>
 
@@ -317,21 +339,13 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-2xl bg-violet-500 px-6 py-4 text-lg font-semibold text-white transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Analyzing..." : "Analyze Resume"}
-              </button>
-
-              {loading ? (
-                <p className="text-base text-violet-200">
-                  Scoring candidate profile and aligning skills...
-                </p>
-              ) : null}
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-2xl bg-violet-500 px-6 py-4 text-lg font-semibold text-white transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Analyzing..." : "Analyze Resume"}
+            </button>
 
             {error ? (
               <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-4 text-base text-rose-200">
@@ -342,46 +356,30 @@ export default function App() {
         </section>
 
         <section className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(34,197,94,0.12)]">
-          <div className="mb-6">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.35em] text-emerald-400">
-              AI Resume Rewrite
-            </p>
-            <h2 className="text-4xl font-bold">Rewrite Resume for This Job</h2>
-            <p className="mt-3 max-w-3xl text-lg text-slate-300">
-              Paste resume text below and generate an ATS-optimized version tailored to the job
-              description.
-            </p>
-          </div>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.35em] text-emerald-400">
+            AI Resume Rewrite
+          </p>
+          <h2 className="text-4xl font-bold">Rewrite Resume for This Job</h2>
+          <p className="mt-3 max-w-3xl text-lg text-slate-300">
+            Paste resume text below and generate an ATS-optimized version tailored to the job description.
+          </p>
 
-          <div className="space-y-6">
-            <div>
-              <label className="mb-2 block text-lg font-medium text-slate-200">
-                Resume Text
-              </label>
-              <textarea
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                placeholder="Paste resume text here..."
-                className="h-64 w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-lg text-white outline-none transition focus:border-emerald-400/60"
-              />
-            </div>
+          <div className="mt-6 space-y-6">
+            <textarea
+              value={resumeText}
+              onChange={(e) => setResumeText(e.target.value)}
+              placeholder="Paste resume text here..."
+              className="h-64 w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-lg text-white outline-none transition focus:border-emerald-400/60"
+            />
 
-            <div className="flex flex-wrap items-center gap-4">
-              <button
-                type="button"
-                onClick={handleRewrite}
-                disabled={rewriteLoading}
-                className="rounded-2xl bg-emerald-500 px-6 py-4 text-lg font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {rewriteLoading ? "Rewriting..." : "Rewrite Resume"}
-              </button>
-
-              {rewriteLoading ? (
-                <p className="text-base text-emerald-200">
-                  Generating tailored resume with AI...
-                </p>
-              ) : null}
-            </div>
+            <button
+              type="button"
+              onClick={handleRewrite}
+              disabled={rewriteLoading}
+              className="rounded-2xl bg-emerald-500 px-6 py-4 text-lg font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {rewriteLoading ? "Rewriting..." : "Rewrite Resume"}
+            </button>
 
             {rewriteError ? (
               <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-4 text-base text-rose-200">
@@ -393,12 +391,8 @@ export default function App() {
               <div className="rounded-3xl border border-emerald-400/20 bg-[#04070f] p-6">
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <h3 className="text-2xl font-semibold text-white">Rewritten Resume</h3>
-
                   <div className="flex flex-wrap items-center gap-3">
-                    {copyMessage ? (
-                      <span className="text-sm font-semibold text-emerald-300">{copyMessage}</span>
-                    ) : null}
-
+                    {copyMessage ? <span className="text-sm font-semibold text-emerald-300">{copyMessage}</span> : null}
                     <button
                       type="button"
                       onClick={handleCopyRewrite}
@@ -406,7 +400,6 @@ export default function App() {
                     >
                       Copy
                     </button>
-
                     <button
                       type="button"
                       onClick={handleDownloadRewrite}
@@ -427,22 +420,10 @@ export default function App() {
 
         {result ? (
           <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <h2 className="text-4xl font-bold">Analysis Result</h2>
-                <p className="mt-2 text-lg text-slate-300">
-                  Candidate: {result.candidate_name ?? "Unknown"} • File:{" "}
-                  {result.resume_filename ?? "N/A"}
-                </p>
-              </div>
-              <span className={`rounded-full px-4 py-2 text-lg font-semibold ${scoreTone(result.fit_score)}`}>
-                {scoreLabel(result.fit_score)}
-              </span>
-            </div>
+            <h2 className="text-4xl font-bold">Analysis Result</h2>
 
             <div className="grid gap-6 xl:grid-cols-[1.2fr_2fr]">
               <Gauge score={result.fit_score} />
-
               <div className="grid gap-4 md:grid-cols-2">
                 <StatCard label="ATS Score" value={derivedAts} />
                 <StatCard label="Semantic Similarity" value={result.semantic_similarity} />
@@ -458,45 +439,21 @@ export default function App() {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
-              <ExplainCard
-                title="ATS Fit"
-                value={derivedAts}
-                description="Weighted overall fit based on required job skills, experience indicators, and education/certification signals."
-              />
-              <ExplainCard
-                title="Skill Coverage"
-                value={derivedSkill}
-                description="Measures how many required job skills were directly detected in the uploaded resume."
-              />
-              <ExplainCard
-                title="Model Version"
-                value={result.model_version}
-                description="Current scoring engine version used to generate the candidate analysis response."
-              />
+              <ExplainCard title="ATS Fit" value={derivedAts} description="Weighted overall fit based on required job skills, experience indicators, and role alignment." />
+              <ExplainCard title="Skill Coverage" value={derivedSkill} description="Measures how many required job skills were directly detected in the uploaded resume." />
+              <ExplainCard title="Model Version" value={result.model_version} description="Current scoring engine version used to generate the analysis." />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
               <SectionCard title="Matched Skills">
                 <div className="flex flex-wrap gap-3">
-                  {result.matched_skills.length ? (
-                    result.matched_skills.map((skill) => (
-                      <SkillBadge key={skill} skill={skill} tone="green" />
-                    ))
-                  ) : (
-                    <p className="text-slate-400">No matched skills detected.</p>
-                  )}
+                  {result.matched_skills.length ? result.matched_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="green" />) : <p className="text-slate-400">No matched skills detected.</p>}
                 </div>
               </SectionCard>
 
               <SectionCard title="Missing Skills">
                 <div className="flex flex-wrap gap-3">
-                  {result.missing_skills.length ? (
-                    result.missing_skills.map((skill) => (
-                      <SkillBadge key={skill} skill={skill} tone="red" />
-                    ))
-                  ) : (
-                    <p className="text-slate-300">None</p>
-                  )}
+                  {result.missing_skills.length ? result.missing_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="red" />) : <p className="text-slate-300">None</p>}
                 </div>
               </SectionCard>
             </div>
@@ -504,61 +461,23 @@ export default function App() {
             <div className="grid gap-6 lg:grid-cols-2">
               <SectionCard title="Strengths">
                 <ul className="list-disc space-y-2 pl-6 text-lg text-slate-300">
-                  {result.strengths.map((item, index) => (
-                    <li key={`${item}-${index}`}>{item}</li>
-                  ))}
+                  {result.strengths.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                 </ul>
               </SectionCard>
 
               <SectionCard title="Recommendations">
                 <ul className="list-disc space-y-2 pl-6 text-lg text-slate-300">
-                  {result.recommendations.map((item, index) => (
-                    <li key={`${item}-${index}`}>{item}</li>
-                  ))}
+                  {result.recommendations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                 </ul>
               </SectionCard>
             </div>
-
-            <SectionCard title="Why This Score">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl bg-[#04070f] p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-                    Matched Skills
-                  </p>
-                  <p className="mt-2 text-3xl font-bold">{result.matched_skills.length}</p>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Direct overlap between the job description and resume skill keywords.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-[#04070f] p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-                    Missing Skills
-                  </p>
-                  <p className="mt-2 text-3xl font-bold">{result.missing_skills.length}</p>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Important job requirements that do not currently appear in the uploaded resume.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-[#04070f] p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-                    Semantic Similarity
-                  </p>
-                  <p className="mt-2 text-3xl font-bold">{result.semantic_similarity}</p>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Transformer-based semantic alignment between the resume and job description.
-                  </p>
-                </div>
-              </div>
-            </SectionCard>
           </section>
         ) : null}
 
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-4xl font-bold">Recent Analyses</h2>
-            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
-              Recruiter Review Feed
-            </p>
+            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Recruiter Review Feed</p>
           </div>
 
           {historyLoading ? (
@@ -572,45 +491,16 @@ export default function App() {
           ) : (
             <div className="space-y-4">
               {history.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]"
-                >
+                <div key={item.id} className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <h3 className="text-2xl font-semibold">
-                        {item.candidate_name ?? "Unknown Candidate"}
-                      </h3>
-                      <p className="text-lg text-slate-400">
-                        {item.resume_filename ?? "No filename"}
-                      </p>
-                      <p className="mt-2 text-sm text-slate-500">
-                        {new Date(item.created_at).toLocaleString()}
-                      </p>
+                      <h3 className="text-2xl font-semibold">{item.candidate_name ?? "Unknown Candidate"}</h3>
+                      <p className="text-lg text-slate-400">{item.resume_filename ?? "No filename"}</p>
+                      <p className="mt-2 text-sm text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
                     </div>
-
                     <div className="text-right">
                       <p className="text-4xl font-bold">{item.fit_score}</p>
                       <p className="text-lg text-slate-300">{item.predicted_label}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl bg-[#04070f] p-4">
-                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">
-                        Matched
-                      </p>
-                      <p className="text-base text-slate-300">
-                        {item.matched_skills.length ? item.matched_skills.join(", ") : "None"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-[#04070f] p-4">
-                      <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-400">
-                        Missing
-                      </p>
-                      <p className="text-base text-slate-300">
-                        {item.missing_skills.length ? item.missing_skills.join(", ") : "None"}
-                      </p>
                     </div>
                   </div>
                 </div>
