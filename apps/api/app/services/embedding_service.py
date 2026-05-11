@@ -10,7 +10,7 @@ class EmbeddingService:
         score = SequenceMatcher(
             None,
             text_a.lower(),
-            text_b.lower()
+            text_b.lower(),
         ).ratio()
 
         return round(score, 4)

@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes.rewrite import router as rewrite_router
+
 from app.routes.analyze import router as analyze_router
+from app.routes.rewrite import router as rewrite_router
 
 app = FastAPI(title="RecruitFlow AI Elite API", version="1.3.0")
 
@@ -16,6 +17,9 @@ app.add_middleware(
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
 
+
 @app.get("/")
 def root():
-    return {"message": "RecruitFlow AI Elite API is running. Visit /docs for Swagger UI."}
+    return {
+        "message": "RecruitFlow AI Elite API is running. Visit /docs for Swagger UI."
+    }

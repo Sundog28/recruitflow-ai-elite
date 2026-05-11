@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import List
+
 from app.services.embedding_service import EmbeddingService
 from app.services.parser_service import parse_job_description, parse_resume
 
@@ -14,7 +15,7 @@ class ScoreOutput:
     strengths: List[str]
     recommendations: List[str]
     candidate_name: str | None
-    model_version: str = "embedding-hybrid-v2"
+    model_version: str = "lightweight-sequence-similarity-v1"
 
 
 class ScoringService:
@@ -37,7 +38,6 @@ class ScoringService:
             resume["normalized_text"],
             job["normalized_text"],
         )
-        model_version = "lightweight-sequence-similarity-v1"
 
         experience_score = ScoringService._experience_score(
             resume_years=resume["years_signal"],
@@ -82,7 +82,7 @@ class ScoringService:
             strengths=strengths,
             recommendations=recommendations,
             candidate_name=resume["candidate_name"],
-            model_version=model_version,
+            model_version="lightweight-sequence-similarity-v1",
         )
 
     @staticmethod

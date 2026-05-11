@@ -1,6 +1,5 @@
 const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  "https://recruitflow-ai-elite-api.onrender.com";
+  import.meta.env.VITE_API_URL || "https://recruitflow-ai-elite-api.onrender.com";
 
 export type AnalyzeResponse = {
   fit_score: number;
