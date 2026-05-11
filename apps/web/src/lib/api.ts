@@ -1,20 +1,42 @@
 const API_BASE =
   import.meta.env.VITE_API_URL || "https://recruitflow-ai-elite-api.onrender.com";
 
+export type CategoryScores = {
+  backend?: number;
+  frontend?: number;
+  ml_ai?: number;
+  cloud_devops?: number;
+  analytics?: number;
+  [key: string]: number | undefined;
+};
+
 export type AnalyzeResponse = {
   fit_score: number;
   predicted_label: string;
   semantic_similarity: number;
+
   matched_skills: string[];
   missing_skills: string[];
+
   strengths: string[];
   recommendations: string[];
+
   candidate_name?: string | null;
   resume_filename?: string | null;
   model_version: string;
+
   ats_score?: number | null;
   skill_score?: number | null;
   experience_score?: number | null;
+
+  project_relevance_score?: number | null;
+  seniority_match_score?: number | null;
+  confidence_score?: number | null;
+
+  category_scores?: CategoryScores;
+  red_flags?: string[];
+  hiring_recommendation?: string | null;
+  score_explanation?: string[];
 };
 
 export type HistoryItem = {
@@ -27,7 +49,9 @@ export type HistoryItem = {
   semantic_similarity: number;
   matched_skills: string[];
   missing_skills: string[];
-  recommendations: string[];
+  recommendations?: string[];
+  confidence_score?: number | null;
+  hiring_recommendation?: string | null;
 };
 
 export type RewriteResponse = {
