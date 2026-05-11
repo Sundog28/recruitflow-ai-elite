@@ -50,11 +50,18 @@ function scoreTone(score: number) {
   return "text-rose-300 bg-rose-500/15";
 }
 
+function safeNumber(value: number | null | undefined, fallback = 0) {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return Math.round(value * 100) / 100;
+}
+
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_0_20px_rgba(139,92,246,0.08)]">
       <p className="text-sm text-slate-400">{label}</p>
-      <p className="mt-2 text-4xl font-semibold tracking-tight text-white">{value}</p>
+      <p className="mt-2 text-4xl font-semibold tracking-tight text-white">
+        {value}
+      </p>
     </div>
   );
 }
@@ -73,20 +80,26 @@ function SkillBadge({
         ? "bg-rose-500/15 text-rose-300 ring-rose-500/30"
         : "bg-violet-500/15 text-violet-300 ring-violet-500/30";
 
-  return <span className={`rounded-full px-3 py-1 text-sm ring-1 ${toneClass}`}>{skill}</span>;
+  return (
+    <span className={`rounded-full px-3 py-1 text-sm ring-1 ${toneClass}`}>
+      {skill}
+    </span>
+  );
 }
 
 function ProgressBar({ label, value }: { label: string; value: number }) {
+  const safe = Math.max(0, Math.min(100, safeNumber(value)));
+
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <div className="mb-2 flex items-center justify-between text-sm">
         <span className="text-slate-300">{label}</span>
-        <span className="font-medium text-white">{value}</span>
+        <span className="font-medium text-white">{safe}</span>
       </div>
       <div className="h-3 rounded-full bg-white/10">
         <div
           className="h-3 rounded-full bg-violet-500 transition-all"
-          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+          style={{ width: `${safe}%` }}
         />
       </div>
     </div>
@@ -94,20 +107,24 @@ function ProgressBar({ label, value }: { label: string; value: number }) {
 }
 
 function Gauge({ score }: { score: number }) {
+  const safe = Math.max(0, Math.min(100, safeNumber(score)));
+
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-      <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Overall Fit</p>
+      <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
+        Overall Fit
+      </p>
       <div className="mt-4">
         <div className="mb-3 flex items-end justify-between">
-          <span className="text-6xl font-black text-white">{score}</span>
-          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${scoreTone(score)}`}>
-            {scoreLabel(score)}
+          <span className="text-6xl font-black text-white">{safe}</span>
+          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${scoreTone(safe)}`}>
+            {scoreLabel(safe)}
           </span>
         </div>
         <div className="h-4 rounded-full bg-white/10">
           <div
             className="h-4 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all"
-            style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+            style={{ width: `${safe}%` }}
           />
         </div>
       </div>
@@ -126,14 +143,22 @@ function ExplainCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{title}</p>
+      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+        {title}
+      </p>
       <p className="mt-2 text-3xl font-bold text-white">{value}</p>
       <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
     </div>
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
       <h3 className="mb-4 text-2xl font-semibold text-white">{title}</h3>
@@ -177,12 +202,12 @@ export default function App() {
 
   const derivedAts = useMemo(() => {
     if (!result) return 0;
-    return result.ats_score ?? result.fit_score;
+    return safeNumber(result.ats_score ?? result.fit_score);
   }, [result]);
 
   const derivedSkill = useMemo(() => {
     if (!result) return 0;
-    if (result.skill_score != null) return result.skill_score;
+    if (result.skill_score != null) return safeNumber(result.skill_score);
     const total = result.matched_skills.length + result.missing_skills.length;
     if (total === 0) return 100;
     return Math.round((result.matched_skills.length / total) * 100);
@@ -190,7 +215,7 @@ export default function App() {
 
   const derivedExperience = useMemo(() => {
     if (!result) return 0;
-    return result.experience_score ?? 75;
+    return safeNumber(result.experience_score ?? 75);
   }, [result]);
 
   async function handleAnalyze(e: React.FormEvent) {
@@ -281,17 +306,89 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
 
+  function handleDownloadReport() {
+    if (!result) return;
+
+    const report = `
+RECRUITFLOW ENTERPRISE AI REPORT
+
+Candidate:
+${result.candidate_name ?? "Unknown"}
+
+Resume File:
+${result.resume_filename ?? "N/A"}
+
+Fit Score:
+${result.fit_score}
+
+Prediction:
+${result.predicted_label}
+
+Hiring Recommendation:
+${result.hiring_recommendation ?? "N/A"}
+
+Confidence Score:
+${result.confidence_score ?? "N/A"}
+
+ATS Score:
+${result.ats_score ?? "N/A"}
+
+Skill Score:
+${result.skill_score ?? "N/A"}
+
+Experience Score:
+${result.experience_score ?? "N/A"}
+
+Project Relevance:
+${result.project_relevance_score ?? "N/A"}
+
+Seniority Match:
+${result.seniority_match_score ?? "N/A"}
+
+Matched Skills:
+${result.matched_skills.join(", ") || "None"}
+
+Missing Skills:
+${result.missing_skills.join(", ") || "None"}
+
+Red Flags:
+${result.red_flags?.join("\n") || "None"}
+
+Strengths:
+${result.strengths.join("\n") || "None"}
+
+Recommendations:
+${result.recommendations.join("\n") || "None"}
+
+Score Explanation:
+${result.score_explanation?.join("\n") || "N/A"}
+`;
+
+    const blob = new Blob([report], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "ats_report.txt";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="min-h-screen bg-[#050816] text-white">
       <div className="mx-auto max-w-7xl px-6 py-10">
         <header className="mb-10">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.4em] text-emerald-400">
-            AI / ML / Full Stack
+            QuantumHire Recruiting Network
           </p>
-          <h1 className="text-6xl font-black tracking-tight">RecruitFlow AI Elite</h1>
-          <p className="mt-4 max-w-4xl text-2xl leading-relaxed text-slate-300">
-            Recruiter-facing AI platform for resume analysis, ATS alignment, skill gap detection,
-            semantic fit scoring, and AI resume rewriting.
+          <h1 className="text-6xl font-black tracking-tight">
+            RecruitFlow Enterprise AI
+          </h1>
+          <p className="mt-4 max-w-5xl text-2xl leading-relaxed text-slate-300">
+            Enterprise recruiting intelligence platform used for ATS scoring,
+            candidate ranking, AI-powered resume optimization, recruiter
+            screening workflows, and hiring decision support.
           </p>
         </header>
 
@@ -303,7 +400,7 @@ export default function App() {
               onClick={handleUseDemo}
               className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20"
             >
-              Load Strong Demo Resume
+              Load Top Candidate Demo
             </button>
           </div>
 
@@ -331,10 +428,12 @@ export default function App() {
                   onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
                   className="text-sm text-slate-200"
                 />
-                {resumeFile ? <p className="mt-3 text-base text-slate-300">{resumeFile.name}</p> : null}
+                {resumeFile ? (
+                  <p className="mt-3 text-base text-slate-300">{resumeFile.name}</p>
+                ) : null}
                 <p className="mt-3 text-sm text-slate-400">
-                  Upload a plain text, PDF, or DOCX resume. For best results, use resumes with
-                  selectable text.
+                  Upload a plain text, PDF, or DOCX resume. For best results, use
+                  resumes with selectable text.
                 </p>
               </div>
             </div>
@@ -361,7 +460,8 @@ export default function App() {
           </p>
           <h2 className="text-4xl font-bold">Rewrite Resume for This Job</h2>
           <p className="mt-3 max-w-3xl text-lg text-slate-300">
-            Paste resume text below and generate an ATS-optimized version tailored to the job description.
+            Paste resume text below and generate an ATS-optimized version tailored
+            to the job description.
           </p>
 
           <div className="mt-6 space-y-6">
@@ -390,9 +490,15 @@ export default function App() {
             {rewrittenResume ? (
               <div className="rounded-3xl border border-emerald-400/20 bg-[#04070f] p-6">
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <h3 className="text-2xl font-semibold text-white">Rewritten Resume</h3>
+                  <h3 className="text-2xl font-semibold text-white">
+                    Rewritten Resume
+                  </h3>
                   <div className="flex flex-wrap items-center gap-3">
-                    {copyMessage ? <span className="text-sm font-semibold text-emerald-300">{copyMessage}</span> : null}
+                    {copyMessage ? (
+                      <span className="text-sm font-semibold text-emerald-300">
+                        {copyMessage}
+                      </span>
+                    ) : null}
                     <button
                       type="button"
                       onClick={handleCopyRewrite}
@@ -420,15 +526,47 @@ export default function App() {
 
         {result ? (
           <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
-            <h2 className="text-4xl font-bold">Analysis Result</h2>
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-4xl font-bold">Analysis Result</h2>
+                <p className="mt-2 text-lg text-slate-300">
+                  Candidate: {result.candidate_name ?? "Unknown"} • File:{" "}
+                  {result.resume_filename ?? "N/A"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDownloadReport}
+                className="rounded-2xl bg-fuchsia-500 px-5 py-3 font-semibold text-white transition hover:bg-fuchsia-400"
+              >
+                Download ATS Report
+              </button>
+            </div>
+
+            {result.hiring_recommendation ? (
+              <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-5">
+                <p className="text-sm uppercase tracking-[0.25em] text-emerald-300">
+                  Recruiter Recommendation
+                </p>
+                <p className="mt-2 text-2xl font-bold text-white">
+                  {result.hiring_recommendation}
+                </p>
+              </div>
+            ) : null}
 
             <div className="grid gap-6 xl:grid-cols-[1.2fr_2fr]">
               <Gauge score={result.fit_score} />
+
               <div className="grid gap-4 md:grid-cols-2">
                 <StatCard label="ATS Score" value={derivedAts} />
                 <StatCard label="Semantic Similarity" value={result.semantic_similarity} />
                 <StatCard label="Skill Score" value={derivedSkill} />
                 <StatCard label="Experience Score" value={derivedExperience} />
+                <StatCard label="Confidence Score" value={safeNumber(result.confidence_score)} />
+                <StatCard label="Project Relevance" value={safeNumber(result.project_relevance_score)} />
+                <StatCard label="Seniority Match" value={safeNumber(result.seniority_match_score)} />
+                <StatCard label="Model" value={result.model_version} />
               </div>
             </div>
 
@@ -436,48 +574,102 @@ export default function App() {
               <ProgressBar label="ATS Alignment" value={derivedAts} />
               <ProgressBar label="Skill Coverage" value={derivedSkill} />
               <ProgressBar label="Experience Match" value={derivedExperience} />
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-3">
-              <ExplainCard title="ATS Fit" value={derivedAts} description="Weighted overall fit based on required job skills, experience indicators, and role alignment." />
-              <ExplainCard title="Skill Coverage" value={derivedSkill} description="Measures how many required job skills were directly detected in the uploaded resume." />
-              <ExplainCard title="Model Version" value={result.model_version} description="Current scoring engine version used to generate the analysis." />
+              <ProgressBar label="Confidence" value={safeNumber(result.confidence_score)} />
+              <ProgressBar label="Project Relevance" value={safeNumber(result.project_relevance_score)} />
+              <ProgressBar label="Seniority Match" value={safeNumber(result.seniority_match_score)} />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
               <SectionCard title="Matched Skills">
                 <div className="flex flex-wrap gap-3">
-                  {result.matched_skills.length ? result.matched_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="green" />) : <p className="text-slate-400">No matched skills detected.</p>}
+                  {result.matched_skills.length ? (
+                    result.matched_skills.map((skill) => (
+                      <SkillBadge key={skill} skill={skill} tone="green" />
+                    ))
+                  ) : (
+                    <p className="text-slate-400">No matched skills detected.</p>
+                  )}
                 </div>
               </SectionCard>
 
               <SectionCard title="Missing Skills">
                 <div className="flex flex-wrap gap-3">
-                  {result.missing_skills.length ? result.missing_skills.map((skill) => <SkillBadge key={skill} skill={skill} tone="red" />) : <p className="text-slate-300">None</p>}
+                  {result.missing_skills.length ? (
+                    result.missing_skills.map((skill) => (
+                      <SkillBadge key={skill} skill={skill} tone="red" />
+                    ))
+                  ) : (
+                    <p className="text-slate-300">None</p>
+                  )}
                 </div>
               </SectionCard>
             </div>
 
+            {result.category_scores ? (
+              <SectionCard title="Skill Category Breakdown">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {Object.entries(result.category_scores).map(([key, value]) => (
+                    <ProgressBar
+                      key={key}
+                      label={key.replace("_", " ").toUpperCase()}
+                      value={Number(value ?? 0)}
+                    />
+                  ))}
+                </div>
+              </SectionCard>
+            ) : null}
+
             <div className="grid gap-6 lg:grid-cols-2">
               <SectionCard title="Strengths">
                 <ul className="list-disc space-y-2 pl-6 text-lg text-slate-300">
-                  {result.strengths.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+                  {result.strengths.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
                 </ul>
               </SectionCard>
 
               <SectionCard title="Recommendations">
                 <ul className="list-disc space-y-2 pl-6 text-lg text-slate-300">
-                  {result.recommendations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+                  {result.recommendations.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
                 </ul>
               </SectionCard>
             </div>
+
+            {result.red_flags?.length ? (
+              <SectionCard title="Recruiter Red Flags">
+                <ul className="list-disc space-y-2 pl-6 text-lg text-rose-200">
+                  {result.red_flags.map((flag, index) => (
+                    <li key={`${flag}-${index}`}>{flag}</li>
+                  ))}
+                </ul>
+              </SectionCard>
+            ) : null}
+
+            {result.score_explanation?.length ? (
+              <SectionCard title="Why This Candidate Scored This Way">
+                <div className="space-y-3">
+                  {result.score_explanation.map((item, index) => (
+                    <div
+                      key={`${item}-${index}`}
+                      className="rounded-2xl border border-white/10 bg-black/20 p-4 text-slate-200"
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            ) : null}
           </section>
         ) : null}
 
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-4xl font-bold">Recent Analyses</h2>
-            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Recruiter Review Feed</p>
+            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
+              Recruiter Review Feed
+            </p>
           </div>
 
           {historyLoading ? (
@@ -491,12 +683,26 @@ export default function App() {
           ) : (
             <div className="space-y-4">
               {history.map((item) => (
-                <div key={item.id} className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+                <div
+                  key={item.id}
+                  className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]"
+                >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <h3 className="text-2xl font-semibold">{item.candidate_name ?? "Unknown Candidate"}</h3>
-                      <p className="text-lg text-slate-400">{item.resume_filename ?? "No filename"}</p>
-                      <p className="mt-2 text-sm text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
+                      <h3 className="text-2xl font-semibold">
+                        {item.candidate_name ?? "Unknown Candidate"}
+                      </h3>
+                      <p className="text-lg text-slate-400">
+                        {item.resume_filename ?? "No filename"}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-500">
+                        {new Date(item.created_at).toLocaleString()}
+                      </p>
+                      {item.hiring_recommendation ? (
+                        <p className="mt-2 text-sm text-emerald-300">
+                          {item.hiring_recommendation}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="text-right">
                       <p className="text-4xl font-bold">{item.fit_score}</p>
