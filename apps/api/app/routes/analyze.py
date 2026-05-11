@@ -42,6 +42,7 @@ def parse_pdf(content: bytes) -> str:
 
     except HTTPException:
         raise
+
     except Exception as exc:
         raise HTTPException(
             status_code=400,
@@ -52,7 +53,10 @@ def parse_pdf(content: bytes) -> str:
 def parse_docx(content: bytes) -> str:
     try:
         doc = Document(BytesIO(content))
-        text = "\n".join(p.text for p in doc.paragraphs).strip()
+
+        text = "\n".join(
+            p.text for p in doc.paragraphs
+        ).strip()
 
         if not text:
             raise HTTPException(
@@ -64,6 +68,7 @@ def parse_docx(content: bytes) -> str:
 
     except HTTPException:
         raise
+
     except Exception as exc:
         raise HTTPException(
             status_code=400,
@@ -89,21 +94,12 @@ def extract_resume_text(filename: str, content: bytes) -> str:
     )
 
 
-def compute_skill_score(matched_skills: list[str], missing_skills: list[str]) -> int:
-    total = len(matched_skills) + len(missing_skills)
-
-    if total == 0:
-        return 100
-
-    return round((len(matched_skills) / total) * 100)
-
-
 @router.get("/health")
 def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "1.4.0",
+        "version": "2.0.0",
     }
 
 
@@ -137,16 +133,14 @@ async def analyze_upload(
             detail="Uploaded resume file is empty.",
         )
 
-    resume_text = extract_resume_text(resume_file.filename, content)
+    resume_text = extract_resume_text(
+        resume_file.filename,
+        content,
+    )
 
     score = ScoringService.score(
         resume_text=resume_text,
         job_description=job_description,
-    )
-
-    skill_score = compute_skill_score(
-        matched_skills=score.matched_skills,
-        missing_skills=score.missing_skills,
     )
 
     result = {
@@ -160,9 +154,20 @@ async def analyze_upload(
         "candidate_name": score.candidate_name,
         "resume_filename": resume_file.filename,
         "model_version": score.model_version,
-        "ats_score": score.fit_score,
-        "skill_score": skill_score,
-        "experience_score": None,
+
+        # upgraded scoring
+        "ats_score": score.ats_score,
+        "skill_score": score.skill_score,
+        "experience_score": score.experience_score,
+        "project_relevance_score": score.project_relevance_score,
+        "seniority_match_score": score.seniority_match_score,
+        "confidence_score": score.confidence_score,
+
+        # recruiter explainability
+        "category_scores": score.category_scores,
+        "red_flags": score.red_flags,
+        "hiring_recommendation": score.hiring_recommendation,
+        "score_explanation": score.score_explanation,
     }
 
     FAKE_HISTORY.insert(
@@ -177,7 +182,8 @@ async def analyze_upload(
             "semantic_similarity": result["semantic_similarity"],
             "matched_skills": result["matched_skills"],
             "missing_skills": result["missing_skills"],
-            "recommendations": result["recommendations"],
+            "confidence_score": result["confidence_score"],
+            "hiring_recommendation": result["hiring_recommendation"],
         },
     )
 
