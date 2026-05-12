@@ -37,6 +37,14 @@ export type AnalyzeResponse = {
   red_flags?: string[];
   hiring_recommendation?: string | null;
   score_explanation?: string[];
+
+  share_id?: string | null;
+};
+
+export type ReportResponse = AnalyzeResponse & {
+  id?: number;
+  created_at?: string;
+  job_description?: string;
 };
 
 export type HistoryItem = {
@@ -52,6 +60,7 @@ export type HistoryItem = {
   recommendations?: string[];
   confidence_score?: number | null;
   hiring_recommendation?: string | null;
+  share_id?: string | null;
 };
 
 export type RewriteResponse = {
@@ -115,4 +124,9 @@ export async function rewriteResume(
 export async function getHistory(): Promise<HistoryItem[]> {
   const response = await fetch(`${API_BASE}/api/v1/history`);
   return parseJsonResponse<HistoryItem[]>(response, "Failed to fetch history.");
+}
+
+export async function getReport(shareId: string): Promise<ReportResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/report/${shareId}`);
+  return parseJsonResponse<ReportResponse>(response, "Failed to fetch report.");
 }
