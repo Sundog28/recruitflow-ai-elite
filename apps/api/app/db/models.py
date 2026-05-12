@@ -4,11 +4,30 @@ from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Float
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 
 from app.db.database import Base
+
+
+class RecruiterUser(Base):
+    __tablename__ = "recruiter_users"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    email = Column(String(255), unique=True, index=True, nullable=False)
+
+    full_name = Column(String(255), nullable=True)
+
+    company_name = Column(String(255), nullable=True)
+
+    hashed_password = Column(String(255), nullable=False)
+
+    is_active = Column(Boolean, default=True)
 
 
 class AnalysisRecord(Base):
@@ -17,6 +36,8 @@ class AnalysisRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    recruiter_id = Column(Integer, ForeignKey("recruiter_users.id"), nullable=True)
 
     candidate_name = Column(String(255), nullable=True)
 
