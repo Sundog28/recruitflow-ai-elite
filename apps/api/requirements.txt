@@ -7,3 +7,6 @@ openai
 sqlalchemy
 pydantic-settings
 psycopg2-binary
+passlib[bcrypt]
+python-jose[cryptography]
+email-validator
