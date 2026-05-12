@@ -272,6 +272,16 @@ export default function App() {
     window.setTimeout(() => setCopyMessage(""), 1800);
   }
 
+  async function handleCopyShareLink() {
+    if (!result?.share_id) return;
+
+    const shareUrl = `${window.location.origin}/?report=${result.share_id}`;
+    await navigator.clipboard.writeText(shareUrl);
+
+    setCopyMessage("Share link copied!");
+    window.setTimeout(() => setCopyMessage(""), 1800);
+  }
+
   function handleDownloadRewrite() {
     if (!rewrittenResume) return;
 
@@ -291,6 +301,9 @@ export default function App() {
 
     const report = `
 RECRUITFLOW AI ELITE ATS REPORT
+
+Share Link:
+${result.share_id ? `${window.location.origin}/?report=${result.share_id}` : "N/A"}
 
 Candidate:
 ${result.candidate_name ?? "Unknown"}
@@ -371,6 +384,12 @@ ${result.score_explanation?.join("\n") || "N/A"}
             workflows, and hiring decision support.
           </p>
         </header>
+
+        {copyMessage ? (
+          <div className="mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-emerald-200">
+            {copyMessage}
+          </div>
+        ) : null}
 
         <section className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.16)]">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -474,11 +493,6 @@ ${result.score_explanation?.join("\n") || "N/A"}
                     Rewritten Resume
                   </h3>
                   <div className="flex flex-wrap items-center gap-3">
-                    {copyMessage ? (
-                      <span className="text-sm font-semibold text-emerald-300">
-                        {copyMessage}
-                      </span>
-                    ) : null}
                     <button
                       type="button"
                       onClick={handleCopyRewrite}
@@ -513,15 +527,32 @@ ${result.score_explanation?.join("\n") || "N/A"}
                   Candidate: {result.candidate_name ?? "Unknown"} • File:{" "}
                   {result.resume_filename ?? "N/A"}
                 </p>
+                {result.share_id ? (
+                  <p className="mt-2 text-sm text-slate-400">
+                    Share ID: {result.share_id}
+                  </p>
+                ) : null}
               </div>
 
-              <button
-                type="button"
-                onClick={handleDownloadReport}
-                className="rounded-2xl bg-fuchsia-500 px-5 py-3 font-semibold text-white transition hover:bg-fuchsia-400"
-              >
-                Download ATS Report
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleDownloadReport}
+                  className="rounded-2xl bg-fuchsia-500 px-5 py-3 font-semibold text-white transition hover:bg-fuchsia-400"
+                >
+                  Download ATS Report
+                </button>
+
+                {result.share_id ? (
+                  <button
+                    type="button"
+                    onClick={handleCopyShareLink}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+                  >
+                    Copy Share Link
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             {result.hiring_recommendation ? (
@@ -681,6 +712,11 @@ ${result.score_explanation?.join("\n") || "N/A"}
                       {item.hiring_recommendation ? (
                         <p className="mt-2 text-sm text-emerald-300">
                           {item.hiring_recommendation}
+                        </p>
+                      ) : null}
+                      {item.share_id ? (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Share ID: {item.share_id}
                         </p>
                       ) : null}
                     </div>
