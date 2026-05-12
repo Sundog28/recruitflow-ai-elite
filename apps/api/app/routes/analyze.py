@@ -1,4 +1,3 @@
-from datetime import datetime
 from io import BytesIO
 import json
 import uuid
@@ -35,7 +34,7 @@ def parse_txt(content: bytes) -> str:
 def parse_pdf(content: bytes) -> str:
     try:
         reader = PdfReader(BytesIO(content))
-        pages: list[str] = []
+        pages = []
 
         for page in reader.pages:
             pages.append(page.extract_text() or "")
@@ -109,7 +108,7 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.1.0",
+        "version": "2.2.0",
     }
 
 
@@ -134,18 +133,82 @@ def history(db: Session = Depends(get_db)):
                 "fit_score": item.fit_score,
                 "predicted_label": item.predicted_label,
                 "semantic_similarity": item.semantic_similarity,
+
                 "matched_skills": item.matched_skills.split(", ")
                 if item.matched_skills
                 else [],
+
                 "missing_skills": item.missing_skills.split(", ")
                 if item.missing_skills
                 else [],
+
                 "confidence_score": item.confidence_score,
                 "hiring_recommendation": item.hiring_recommendation,
+                "share_id": item.share_id,
             }
         )
 
     return history_items
+
+
+@router.get("/report/{share_id}")
+def get_report(
+    share_id: str,
+    db: Session = Depends(get_db),
+):
+    record = (
+        db.query(AnalysisRecord)
+        .filter(AnalysisRecord.share_id == share_id)
+        .first()
+    )
+
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Report not found.",
+        )
+
+    return {
+        "id": record.id,
+        "created_at": record.created_at.isoformat(),
+
+        "candidate_name": record.candidate_name,
+        "resume_filename": record.resume_filename,
+
+        "fit_score": record.fit_score,
+        "predicted_label": record.predicted_label,
+        "semantic_similarity": record.semantic_similarity,
+
+        "matched_skills": record.matched_skills.split(", ")
+        if record.matched_skills
+        else [],
+
+        "missing_skills": record.missing_skills.split(", ")
+        if record.missing_skills
+        else [],
+
+        "recommendations": json.loads(record.recommendations or "[]"),
+        "strengths": json.loads(record.strengths or "[]"),
+        "red_flags": json.loads(record.red_flags or "[]"),
+        "score_explanation": json.loads(record.score_explanation or "[]"),
+
+        "ats_score": record.ats_score,
+        "skill_score": record.skill_score,
+        "experience_score": record.experience_score,
+        "project_relevance_score": record.project_relevance_score,
+        "seniority_match_score": record.seniority_match_score,
+        "confidence_score": record.confidence_score,
+
+        "category_scores": json.loads(record.category_scores or "{}"),
+
+        "hiring_recommendation": record.hiring_recommendation,
+
+        "model_version": record.model_version,
+
+        "job_description": record.job_description,
+
+        "share_id": record.share_id,
+    }
 
 
 @router.post("/analyze-upload")
@@ -190,24 +253,32 @@ async def analyze_upload(
         "fit_score": score.fit_score,
         "predicted_label": score.predicted_label,
         "semantic_similarity": score.semantic_similarity,
+
         "matched_skills": score.matched_skills,
         "missing_skills": score.missing_skills,
+
         "strengths": score.strengths,
         "recommendations": score.recommendations,
+
         "candidate_name": score.candidate_name,
         "resume_filename": resume_file.filename,
+
         "model_version": score.model_version,
 
         "ats_score": score.ats_score,
         "skill_score": score.skill_score,
         "experience_score": score.experience_score,
+
         "project_relevance_score": score.project_relevance_score,
         "seniority_match_score": score.seniority_match_score,
         "confidence_score": score.confidence_score,
 
         "category_scores": score.category_scores,
+
         "red_flags": score.red_flags,
+
         "hiring_recommendation": score.hiring_recommendation,
+
         "score_explanation": score.score_explanation,
 
         "share_id": share_id,
