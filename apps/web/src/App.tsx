@@ -132,26 +132,6 @@ function Gauge({ score }: { score: number }) {
   );
 }
 
-function ExplainCard({
-  title,
-  value,
-  description,
-}: {
-  title: string;
-  value: number | string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-        {title}
-      </p>
-      <p className="mt-2 text-3xl font-bold text-white">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
-    </div>
-  );
-}
-
 function SectionCard({
   title,
   children,
@@ -310,7 +290,7 @@ export default function App() {
     if (!result) return;
 
     const report = `
-RECRUITFLOW ENTERPRISE AI REPORT
+RECRUITFLOW AI ELITE ATS REPORT
 
 Candidate:
 ${result.candidate_name ?? "Unknown"}
@@ -369,7 +349,7 @@ ${result.score_explanation?.join("\n") || "N/A"}
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = "ats_report.txt";
+    link.download = "recruitflow_ai_elite_ats_report.txt";
     link.click();
 
     URL.revokeObjectURL(url);
@@ -380,15 +360,15 @@ ${result.score_explanation?.join("\n") || "N/A"}
       <div className="mx-auto max-w-7xl px-6 py-10">
         <header className="mb-10">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.4em] text-emerald-400">
-            QuantumHire Recruiting Network
+            AI / ML / FULL STACK
           </p>
           <h1 className="text-6xl font-black tracking-tight">
-            RecruitFlow Enterprise AI
+            RecruitFlow AI Elite
           </h1>
           <p className="mt-4 max-w-5xl text-2xl leading-relaxed text-slate-300">
-            Enterprise recruiting intelligence platform used for ATS scoring,
-            candidate ranking, AI-powered resume optimization, recruiter
-            screening workflows, and hiring decision support.
+            Recruiter-facing AI platform for resume analysis, ATS alignment,
+            candidate ranking, AI-powered resume rewriting, recruiter screening
+            workflows, and hiring decision support.
           </p>
         </header>
 
