@@ -1,15 +1,25 @@
 from datetime import datetime
 from io import BytesIO
+import json
+import uuid
 
 from docx import Document
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import File
+from fastapi import Form
+from fastapi import HTTPException
+from fastapi import UploadFile
+
 from pypdf import PdfReader
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
+from app.db.models import AnalysisRecord
 
 from app.services.scoring_service import ScoringService
 
 router = APIRouter(prefix="/api/v1", tags=["analyze"])
-
-FAKE_HISTORY: list[dict] = []
 
 
 def parse_txt(content: bytes) -> str:
@@ -99,19 +109,50 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.0.0",
+        "version": "2.1.0",
     }
 
 
 @router.get("/history")
-def history():
-    return FAKE_HISTORY[:25]
+def history(db: Session = Depends(get_db)):
+    records = (
+        db.query(AnalysisRecord)
+        .order_by(AnalysisRecord.created_at.desc())
+        .limit(25)
+        .all()
+    )
+
+    history_items = []
+
+    for item in records:
+        history_items.append(
+            {
+                "id": item.id,
+                "created_at": item.created_at.isoformat(),
+                "candidate_name": item.candidate_name,
+                "resume_filename": item.resume_filename,
+                "fit_score": item.fit_score,
+                "predicted_label": item.predicted_label,
+                "semantic_similarity": item.semantic_similarity,
+                "matched_skills": item.matched_skills.split(", ")
+                if item.matched_skills
+                else [],
+                "missing_skills": item.missing_skills.split(", ")
+                if item.missing_skills
+                else [],
+                "confidence_score": item.confidence_score,
+                "hiring_recommendation": item.hiring_recommendation,
+            }
+        )
+
+    return history_items
 
 
 @router.post("/analyze-upload")
 async def analyze_upload(
     job_description: str = Form(...),
     resume_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
 ):
     if not job_description.strip():
         raise HTTPException(
@@ -143,6 +184,8 @@ async def analyze_upload(
         job_description=job_description,
     )
 
+    share_id = str(uuid.uuid4())
+
     result = {
         "fit_score": score.fit_score,
         "predicted_label": score.predicted_label,
@@ -155,7 +198,6 @@ async def analyze_upload(
         "resume_filename": resume_file.filename,
         "model_version": score.model_version,
 
-        # upgraded scoring
         "ats_score": score.ats_score,
         "skill_score": score.skill_score,
         "experience_score": score.experience_score,
@@ -163,28 +205,52 @@ async def analyze_upload(
         "seniority_match_score": score.seniority_match_score,
         "confidence_score": score.confidence_score,
 
-        # recruiter explainability
         "category_scores": score.category_scores,
         "red_flags": score.red_flags,
         "hiring_recommendation": score.hiring_recommendation,
         "score_explanation": score.score_explanation,
+
+        "share_id": share_id,
     }
 
-    FAKE_HISTORY.insert(
-        0,
-        {
-            "id": len(FAKE_HISTORY) + 1,
-            "created_at": datetime.utcnow().isoformat(),
-            "candidate_name": result["candidate_name"],
-            "resume_filename": result["resume_filename"],
-            "fit_score": result["fit_score"],
-            "predicted_label": result["predicted_label"],
-            "semantic_similarity": result["semantic_similarity"],
-            "matched_skills": result["matched_skills"],
-            "missing_skills": result["missing_skills"],
-            "confidence_score": result["confidence_score"],
-            "hiring_recommendation": result["hiring_recommendation"],
-        },
+    db_record = AnalysisRecord(
+        candidate_name=result["candidate_name"],
+        resume_filename=result["resume_filename"],
+
+        fit_score=result["fit_score"],
+        predicted_label=result["predicted_label"],
+
+        semantic_similarity=result["semantic_similarity"],
+
+        matched_skills=", ".join(result["matched_skills"]),
+        missing_skills=", ".join(result["missing_skills"]),
+
+        recommendations=json.dumps(result["recommendations"]),
+        strengths=json.dumps(result["strengths"]),
+        red_flags=json.dumps(result["red_flags"]),
+        score_explanation=json.dumps(result["score_explanation"]),
+
+        hiring_recommendation=result["hiring_recommendation"],
+
+        ats_score=result["ats_score"],
+        skill_score=result["skill_score"],
+        experience_score=result["experience_score"],
+
+        confidence_score=result["confidence_score"],
+        project_relevance_score=result["project_relevance_score"],
+        seniority_match_score=result["seniority_match_score"],
+
+        category_scores=json.dumps(result["category_scores"]),
+
+        model_version=result["model_version"],
+
+        share_id=share_id,
+
+        job_description=job_description,
     )
+
+    db.add(db_record)
+    db.commit()
+    db.refresh(db_record)
 
     return result
