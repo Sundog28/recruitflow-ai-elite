@@ -83,6 +83,18 @@ class AnalysisRecord(Base):
 
     share_id = Column(String(255), unique=True, nullable=True)
 
+    recruiter_id = Column(Integer, nullable=True)
+
+    candidate_status = Column(
+        String(50),
+        default="screening"
+    )
+
+    recruiter_notes = Column(
+        Text,
+        nullable=True
+    )
+
     bookmarked = Column(Boolean, default=False)
 
     job_description = Column(Text, nullable=False)

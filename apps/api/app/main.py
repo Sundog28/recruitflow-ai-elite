@@ -6,6 +6,8 @@ from app.db import models
 from app.routes.auth import router as auth_router
 from app.routes.analyze import router as analyze_router
 from app.routes.rewrite import router as rewrite_router
+from app.routes.recruiter import router as recruiter_router
+app.include_router(recruiter_router)
 
 Base.metadata.create_all(bind=engine)
 
