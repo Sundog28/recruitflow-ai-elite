@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+
 import {
   analyzeResume,
   getHistory,
+  loginRecruiter,
   rewriteResume,
+  signupRecruiter,
   type AnalyzeResponse,
   type HistoryItem,
+  type RecruiterUser,
 } from "./lib/api";
 
 const demoJobDescription =
@@ -164,6 +168,19 @@ export default function App() {
   const [rewriteError, setRewriteError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
 
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+
+  const [recruiter, setRecruiter] = useState<RecruiterUser | null>(null);
+
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+
+  const [fullName, setFullName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   async function loadHistory() {
     try {
       setHistoryLoading(true);
@@ -178,6 +195,14 @@ export default function App() {
 
   useEffect(() => {
     loadHistory();
+  }, []);
+
+  useEffect(() => {
+    const storedRecruiter = localStorage.getItem("recruitflow_recruiter");
+
+    if (storedRecruiter) {
+      setRecruiter(JSON.parse(storedRecruiter));
+    }
   }, []);
 
   const derivedAts = useMemo(() => {
@@ -198,6 +223,69 @@ export default function App() {
     return safeNumber(result.experience_score ?? 75);
   }, [result]);
 
+  async function handleAuthSubmit(e: React.FormEvent) {
+  e.preventDefault();
+
+  setAuthError("");
+
+  try {
+    setAuthLoading(true);
+
+    if (authMode === "signup") {
+      const response = await signupRecruiter(
+        authEmail,
+        authPassword,
+        fullName,
+        companyName
+      );
+
+      localStorage.setItem(
+        "recruitflow_token",
+        response.access_token
+      );
+
+      localStorage.setItem(
+        "recruitflow_recruiter",
+        JSON.stringify(response.user)
+      );
+
+      setRecruiter(response.user);
+    } else {
+      const response = await loginRecruiter(
+        authEmail,
+        authPassword
+      );
+
+      localStorage.setItem(
+        "recruitflow_token",
+        response.access_token
+      );
+
+      localStorage.setItem(
+        "recruitflow_recruiter",
+        JSON.stringify(response.user)
+      );
+
+      setRecruiter(response.user);
+    }
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Authentication failed.";
+
+    setAuthError(message);
+  } finally {
+    setAuthLoading(false);
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem("recruitflow_token");
+  localStorage.removeItem("recruitflow_recruiter");
+
+  setRecruiter(null);
+}
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -384,6 +472,118 @@ ${result.score_explanation?.join("\n") || "N/A"}
             workflows, and hiring decision support.
           </p>
         </header>
+
+        {!recruiter ? (
+  <section className="mb-10 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.16)]">
+    <div className="mb-6 flex items-center justify-between">
+      <div>
+        <p className="text-sm uppercase tracking-[0.35em] text-violet-300">
+          Recruiter Access
+        </p>
+
+        <h2 className="mt-2 text-4xl font-bold text-white">
+          {authMode === "signup"
+            ? "Create Recruiter Account"
+            : "Recruiter Login"}
+        </h2>
+      </div>
+
+      <button
+        type="button"
+        onClick={() =>
+          setAuthMode(authMode === "login" ? "signup" : "login")
+        }
+        className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-200 hover:bg-violet-500/20"
+      >
+        {authMode === "login"
+          ? "Create Account"
+          : "Back To Login"}
+      </button>
+    </div>
+
+    <form onSubmit={handleAuthSubmit} className="space-y-5">
+      {authMode === "signup" ? (
+        <>
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-white outline-none focus:border-violet-400/60"
+          />
+
+          <input
+            type="text"
+            placeholder="Company Name"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            className="w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-white outline-none focus:border-violet-400/60"
+          />
+        </>
+      ) : null}
+
+      <input
+        type="email"
+        placeholder="Recruiter Email"
+        value={authEmail}
+        onChange={(e) => setAuthEmail(e.target.value)}
+        className="w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-white outline-none focus:border-violet-400/60"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={authPassword}
+        onChange={(e) => setAuthPassword(e.target.value)}
+        className="w-full rounded-2xl border border-white/10 bg-[#04070f] px-4 py-4 text-white outline-none focus:border-violet-400/60"
+      />
+
+      <button
+        type="submit"
+        disabled={authLoading}
+        className="rounded-2xl bg-violet-500 px-6 py-4 text-lg font-semibold text-white transition hover:bg-violet-400 disabled:opacity-60"
+      >
+        {authLoading
+          ? "Please wait..."
+          : authMode === "signup"
+            ? "Create Recruiter Account"
+            : "Login"}
+      </button>
+
+      {authError ? (
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-4 text-rose-200">
+          {authError}
+        </div>
+      ) : null}
+    </form>
+  </section>
+) : (
+  <section className="mb-10 rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p className="text-sm uppercase tracking-[0.35em] text-emerald-300">
+          Recruiter Workspace
+        </p>
+
+        <h2 className="mt-2 text-3xl font-bold text-white">
+          Welcome back, {recruiter.full_name}
+        </h2>
+
+        <p className="mt-2 text-slate-300">
+          {recruiter.company_name}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+      >
+        Logout
+      </button>
+    </div>
+  </section>
+)}
 
         {copyMessage ? (
           <div className="mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-emerald-200">
