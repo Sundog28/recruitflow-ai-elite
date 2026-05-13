@@ -1,5 +1,18 @@
 const API_BASE =
-  import.meta.env.VITE_API_URL || "https://recruitflow-ai-elite-api.onrender.com";
+  import.meta.env.VITE_API_URL ||
+  "https://recruitflow-ai-elite-api.onrender.com";
+
+export type RecruiterUser = {
+  id: number;
+  email: string;
+  full_name?: string;
+  company_name?: string;
+};
+
+export type AuthResponse = {
+  access_token: string;
+  user: RecruiterUser;
+};
 
 export type CategoryScores = {
   backend?: number;
@@ -41,25 +54,25 @@ export type AnalyzeResponse = {
   share_id?: string | null;
 };
 
-export type ReportResponse = AnalyzeResponse & {
-  id?: number;
-  created_at?: string;
-  job_description?: string;
-};
-
 export type HistoryItem = {
   id: number;
   created_at: string;
+
   candidate_name?: string | null;
   resume_filename?: string | null;
+
   fit_score: number;
   predicted_label: string;
   semantic_similarity: number;
+
   matched_skills: string[];
   missing_skills: string[];
+
   recommendations?: string[];
+
   confidence_score?: number | null;
   hiring_recommendation?: string | null;
+
   share_id?: string | null;
 };
 
@@ -89,11 +102,56 @@ async function parseJsonResponse<T>(
   }
 }
 
+export async function signupRecruiter(
+  email: string,
+  password: string,
+  fullName: string,
+  companyName: string
+): Promise<AuthResponse> {
+  const formData = new FormData();
+
+  formData.append("email", email);
+  formData.append("password", password);
+  formData.append("full_name", fullName);
+  formData.append("company_name", companyName);
+
+  const response = await fetch(`${API_BASE}/api/v1/auth/signup`, {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<AuthResponse>(
+    response,
+    "Recruiter signup failed."
+  );
+}
+
+export async function loginRecruiter(
+  email: string,
+  password: string
+): Promise<AuthResponse> {
+  const formData = new FormData();
+
+  formData.append("email", email);
+  formData.append("password", password);
+
+  const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<AuthResponse>(
+    response,
+    "Recruiter login failed."
+  );
+}
+
 export async function analyzeResume(
   jobDescription: string,
   file: File
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
+
   formData.append("job_description", jobDescription);
   formData.append("resume_file", file);
 
@@ -102,7 +160,10 @@ export async function analyzeResume(
     body: formData,
   });
 
-  return parseJsonResponse<AnalyzeResponse>(response, "Analysis failed.");
+  return parseJsonResponse<AnalyzeResponse>(
+    response,
+    "Analysis failed."
+  );
 }
 
 export async function rewriteResume(
@@ -110,6 +171,7 @@ export async function rewriteResume(
   jobDescription: string
 ): Promise<RewriteResponse> {
   const formData = new FormData();
+
   formData.append("resume_text", resumeText);
   formData.append("job_description", jobDescription);
 
@@ -118,15 +180,17 @@ export async function rewriteResume(
     body: formData,
   });
 
-  return parseJsonResponse<RewriteResponse>(response, "Resume rewrite failed.");
+  return parseJsonResponse<RewriteResponse>(
+    response,
+    "Resume rewrite failed."
+  );
 }
 
 export async function getHistory(): Promise<HistoryItem[]> {
   const response = await fetch(`${API_BASE}/api/v1/history`);
-  return parseJsonResponse<HistoryItem[]>(response, "Failed to fetch history.");
-}
 
-export async function getReport(shareId: string): Promise<ReportResponse> {
-  const response = await fetch(`${API_BASE}/api/v1/report/${shareId}`);
-  return parseJsonResponse<ReportResponse>(response, "Failed to fetch report.");
+  return parseJsonResponse<HistoryItem[]>(
+    response,
+    "Failed to fetch history."
+  );
 }
