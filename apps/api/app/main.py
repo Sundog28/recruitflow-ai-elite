@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,9 +12,40 @@ from app.routes.recruiter import router as recruiter_router
 
 Base.metadata.create_all(bind=engine)
 
+
+def run_startup_migrations():
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "ALTER TABLE analysis_records "
+                "ADD COLUMN IF NOT EXISTS recruiter_id INTEGER"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE analysis_records "
+                "ADD COLUMN IF NOT EXISTS candidate_status VARCHAR(50) DEFAULT 'screening'"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE analysis_records "
+                "ADD COLUMN IF NOT EXISTS recruiter_notes TEXT"
+            )
+        )
+        connection.execute(
+            text(
+                "ALTER TABLE analysis_records "
+                "ADD COLUMN IF NOT EXISTS bookmarked BOOLEAN DEFAULT false"
+            )
+        )
+
+
+run_startup_migrations()
+
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.2.0"
+    version="2.3.0"
 )
 
 app.add_middleware(
@@ -24,11 +56,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ROUTERS
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
 app.include_router(auth_router)
 app.include_router(recruiter_router)
+
 
 @app.get("/")
 def root():
@@ -36,10 +68,11 @@ def root():
         "message": "RecruitFlow AI Elite API is running. Visit /docs for Swagger UI."
     }
 
+
 @app.get("/api/v1/health")
 def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.2.0",
+        "version": "2.3.0",
     }
