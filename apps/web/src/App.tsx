@@ -1,3 +1,4 @@
+import RecruiterDashboard from "./components/RecruiterDashboard";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -279,6 +280,8 @@ export default function App() {
     setAuthLoading(false);
   }
 }
+
+<RecruiterDashboard />
 
 function handleLogout() {
   localStorage.removeItem("recruitflow_token");
