@@ -1,58 +1,80 @@
 from fastapi import APIRouter
-from fastapi import Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 
-from app.db.database import get_db
+from app.db.database import SessionLocal
 from app.db.models import AnalysisRecord
 
-router = APIRouter(prefix="/api/v1/recruiter", tags=["recruiter"])
-
+router = APIRouter(
+    prefix="/api/v1/recruiter",
+    tags=["recruiter"]
+)
 
 @router.get("/dashboard")
-def recruiter_dashboard(db: Session = Depends(get_db)):
-    analyses = (
-        db.query(AnalysisRecord)
-        .order_by(AnalysisRecord.created_at.desc())
-        .limit(25)
-        .all()
-    )
+def recruiter_dashboard():
 
-    total_candidates = len(analyses)
+    db: Session = SessionLocal()
 
-    strong_matches = len(
-        [a for a in analyses if a.fit_score >= 80]
-    )
+    try:
 
-    interview_ready = len(
-        [
-            a
-            for a in analyses
-            if a.candidate_status == "interview"
-        ]
-    )
+        analyses = (
+            db.query(AnalysisRecord)
+            .order_by(desc(AnalysisRecord.created_at))
+            .limit(25)
+            .all()
+        )
 
-    bookmarked = len(
-        [
-            a
-            for a in analyses
-            if a.bookmarked
-        ]
-    )
+        total_candidates = len(analyses)
 
-    return {
-        "total_candidates": total_candidates,
-        "strong_matches": strong_matches,
-        "interview_ready": interview_ready,
-        "bookmarked_candidates": bookmarked,
-        "recent_candidates": [
-            {
-                "id": a.id,
-                "candidate_name": a.candidate_name,
-                "fit_score": a.fit_score,
-                "status": a.candidate_status,
-                "bookmarked": a.bookmarked,
-                "created_at": a.created_at,
-            }
-            for a in analyses
-        ],
-    }
+        bookmarked_candidates = len(
+            [a for a in analyses if a.bookmarked]
+        )
+
+        average_fit_score = 0
+
+        if analyses:
+            average_fit_score = round(
+                sum(a.fit_score for a in analyses) / len(analyses),
+                2
+            )
+
+        pipeline = {
+            "screening": 0,
+            "interview": 0,
+            "offer": 0,
+            "hired": 0,
+            "rejected": 0,
+        }
+
+        recent_candidates = []
+
+        for analysis in analyses:
+
+            status = analysis.candidate_status or "screening"
+
+            if status not in pipeline:
+                pipeline[status] = 0
+
+            pipeline[status] += 1
+
+            recent_candidates.append({
+                "id": analysis.id,
+                "candidate_name": analysis.candidate_name,
+                "resume_filename": analysis.resume_filename,
+                "fit_score": analysis.fit_score,
+                "status": status,
+                "bookmarked": analysis.bookmarked,
+                "created_at": analysis.created_at.isoformat(),
+                "recommendation": analysis.hiring_recommendation,
+            })
+
+        return {
+            "total_candidates": total_candidates,
+            "bookmarked_candidates": bookmarked_candidates,
+            "average_fit_score": average_fit_score,
+            "pipeline": pipeline,
+            "recent_candidates": recent_candidates,
+        }
+
+    finally:
+        db.close()
