@@ -27,53 +27,66 @@ export type AnalyzeResponse = {
   fit_score: number;
   predicted_label: string;
   semantic_similarity: number;
-
   matched_skills: string[];
   missing_skills: string[];
-
   strengths: string[];
   recommendations: string[];
-
   candidate_name?: string | null;
   resume_filename?: string | null;
   model_version: string;
-
   ats_score?: number | null;
   skill_score?: number | null;
   experience_score?: number | null;
-
   project_relevance_score?: number | null;
   seniority_match_score?: number | null;
   confidence_score?: number | null;
-
   category_scores?: CategoryScores;
   red_flags?: string[];
   hiring_recommendation?: string | null;
   score_explanation?: string[];
-
   share_id?: string | null;
 };
 
 export type HistoryItem = {
   id: number;
   created_at: string;
-
   candidate_name?: string | null;
   resume_filename?: string | null;
-
   fit_score: number;
   predicted_label: string;
   semantic_similarity: number;
-
   matched_skills: string[];
   missing_skills: string[];
-
   recommendations?: string[];
-
   confidence_score?: number | null;
   hiring_recommendation?: string | null;
-
   share_id?: string | null;
+};
+
+export type RecruiterDashboardCandidate = {
+  id: number;
+  candidate_name?: string | null;
+  resume_filename?: string | null;
+  fit_score: number;
+  status: string;
+  bookmarked: boolean;
+  created_at: string;
+  recommendation?: string | null;
+};
+
+export type RecruiterDashboardResponse = {
+  total_candidates: number;
+  bookmarked_candidates: number;
+  average_fit_score: number;
+  pipeline: {
+    screening: number;
+    interview: number;
+    offer: number;
+    hired: number;
+    rejected: number;
+    [key: string]: number;
+  };
+  recent_candidates: RecruiterDashboardCandidate[];
 };
 
 export type RewriteResponse = {
@@ -109,7 +122,6 @@ export async function signupRecruiter(
   companyName: string
 ): Promise<AuthResponse> {
   const formData = new FormData();
-
   formData.append("email", email);
   formData.append("password", password);
   formData.append("full_name", fullName);
@@ -131,7 +143,6 @@ export async function loginRecruiter(
   password: string
 ): Promise<AuthResponse> {
   const formData = new FormData();
-
   formData.append("email", email);
   formData.append("password", password);
 
@@ -151,7 +162,6 @@ export async function analyzeResume(
   file: File
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
-
   formData.append("job_description", jobDescription);
   formData.append("resume_file", file);
 
@@ -171,7 +181,6 @@ export async function rewriteResume(
   jobDescription: string
 ): Promise<RewriteResponse> {
   const formData = new FormData();
-
   formData.append("resume_text", resumeText);
   formData.append("job_description", jobDescription);
 
@@ -192,5 +201,14 @@ export async function getHistory(): Promise<HistoryItem[]> {
   return parseJsonResponse<HistoryItem[]>(
     response,
     "Failed to fetch history."
+  );
+}
+
+export async function getRecruiterDashboard(): Promise<RecruiterDashboardResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/recruiter/dashboard`);
+
+  return parseJsonResponse<RecruiterDashboardResponse>(
+    response,
+    "Failed to fetch recruiter dashboard."
   );
 }
