@@ -281,8 +281,6 @@ export default function App() {
   }
 }
 
-<RecruiterDashboard />
-
 function handleLogout() {
   localStorage.removeItem("recruitflow_token");
   localStorage.removeItem("recruitflow_recruiter");
@@ -587,6 +585,8 @@ ${result.score_explanation?.join("\n") || "N/A"}
     </div>
   </section>
 )}
+
+{recruiter ? <RecruiterDashboard /> : null}
 
         {copyMessage ? (
           <div className="mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-emerald-200">
