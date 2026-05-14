@@ -212,3 +212,63 @@ export async function getRecruiterDashboard(): Promise<RecruiterDashboardRespons
     "Failed to fetch recruiter dashboard."
   );
 }
+
+export async function toggleCandidateBookmark(
+  candidateId: number
+) {
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/bookmark`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  return parseJsonResponse(
+    response,
+    "Failed to update bookmark."
+  );
+}
+
+export async function updateCandidateStatus(
+  candidateId: number,
+  status: string
+) {
+  const formData = new FormData();
+
+  formData.append("status", status);
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/status`,
+    {
+      method: "PATCH",
+      body: formData,
+    }
+  );
+
+  return parseJsonResponse(
+    response,
+    "Failed to update status."
+  );
+}
+
+export async function updateCandidateNotes(
+  candidateId: number,
+  notes: string
+) {
+  const formData = new FormData();
+
+  formData.append("notes", notes);
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/notes`,
+    {
+      method: "PATCH",
+      body: formData,
+    }
+  );
+
+  return parseJsonResponse(
+    response,
+    "Failed to update notes."
+  );
+}
