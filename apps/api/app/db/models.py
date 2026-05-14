@@ -33,6 +33,26 @@ class RecruiterUser(Base):
     company_name = Column(String(255), nullable=True)
     hashed_password = Column(String(255), nullable=False)
 
+    subscription_status = Column(
+        String(50),
+        default="free"
+    )
+
+    stripe_customer_id = Column(
+        String(255),
+        nullable=True
+    )
+
+    stripe_subscription_id = Column(
+        String(255),
+        nullable=True
+    )
+
+    plan_name = Column(
+        String(100),
+        default="free"
+    )
+
     team_id = Column(
         Integer,
         ForeignKey("recruiter_teams.id"),

@@ -26,8 +26,11 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN bookmarked BOOLEAN DEFAULT false",
         "ALTER TABLE recruiter_users ADD COLUMN team_id INTEGER",
         "ALTER TABLE recruiter_users ADD COLUMN role VARCHAR(50) DEFAULT 'recruiter'",
+        "ALTER TABLE recruiter_users ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
+        "ALTER TABLE recruiter_users ADD COLUMN stripe_customer_id VARCHAR(255)",
+        "ALTER TABLE recruiter_users ADD COLUMN stripe_subscription_id VARCHAR(255)",
+        "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
-        "ALTER TABLE recruiter_users ADD COLUMN analysis_count INTEGER DEFAULT 0",
     ]
 
     for query in migration_queries:
@@ -45,7 +48,7 @@ run_startup_migrations()
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.5.0",
+    version="2.6.0",
 )
 
 app.add_middleware(
@@ -76,5 +79,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.5.0",
+        "version": "2.6.0",
     }
