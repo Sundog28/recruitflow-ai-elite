@@ -1,6 +1,7 @@
 import RecruiterDashboard from "./components/RecruiterDashboard";
 import { useEffect, useMemo, useState } from "react";
 import PricingSection from "./components/PricingSection";
+import { useAuth } from "./context/AuthContext";
 import {
   analyzeResume,
   getHistory,
@@ -9,7 +10,6 @@ import {
   signupRecruiter,
   type AnalyzeResponse,
   type HistoryItem,
-  type RecruiterUser,
 } from "./lib/api";
 
 const demoJobDescription =
@@ -171,7 +171,11 @@ export default function App() {
 
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
 
-  const [recruiter, setRecruiter] = useState<RecruiterUser | null>(null);
+  const {
+    user: recruiter,
+    login,
+    logout,
+  } = useAuth();
 
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -198,14 +202,6 @@ export default function App() {
     loadHistory();
   }, []);
 
-  useEffect(() => {
-    const storedRecruiter = localStorage.getItem("recruitflow_recruiter");
-
-    if (storedRecruiter) {
-      setRecruiter(JSON.parse(storedRecruiter));
-    }
-  }, []);
-
   const derivedAts = useMemo(() => {
     if (!result) return 0;
     return safeNumber(result.ats_score ?? result.fit_score);
@@ -224,7 +220,9 @@ export default function App() {
     return safeNumber(result.experience_score ?? 75);
   }, [result]);
 
-  async function handleAuthSubmit(e: React.FormEvent) {
+  async function handleAuthSubmit(
+  e: React.FormEvent
+) {
   e.preventDefault();
 
   setAuthError("");
@@ -233,41 +231,29 @@ export default function App() {
     setAuthLoading(true);
 
     if (authMode === "signup") {
-      const response = await signupRecruiter(
-        authEmail,
-        authPassword,
-        fullName,
-        companyName
-      );
+      const response =
+        await signupRecruiter(
+          authEmail,
+          authPassword,
+          fullName,
+          companyName
+        );
 
-      localStorage.setItem(
-        "recruitflow_token",
-        response.access_token
+      login(
+        response.access_token,
+        response.user
       );
-
-      localStorage.setItem(
-        "recruitflow_recruiter",
-        JSON.stringify(response.user)
-      );
-
-      setRecruiter(response.user);
     } else {
-      const response = await loginRecruiter(
-        authEmail,
-        authPassword
-      );
+      const response =
+        await loginRecruiter(
+          authEmail,
+          authPassword
+        );
 
-      localStorage.setItem(
-        "recruitflow_token",
-        response.access_token
+      login(
+        response.access_token,
+        response.user
       );
-
-      localStorage.setItem(
-        "recruitflow_recruiter",
-        JSON.stringify(response.user)
-      );
-
-      setRecruiter(response.user);
     }
   } catch (err) {
     const message =
@@ -282,10 +268,7 @@ export default function App() {
 }
 
 function handleLogout() {
-  localStorage.removeItem("recruitflow_token");
-  localStorage.removeItem("recruitflow_recruiter");
-
-  setRecruiter(null);
+  logout();
 }
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
