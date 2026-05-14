@@ -12,6 +12,16 @@ from sqlalchemy import Text
 from app.db.database import Base
 
 
+class RecruiterTeam(Base):
+    __tablename__ = "recruiter_teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    team_name = Column(String(255), nullable=False)
+    owner_id = Column(Integer, nullable=True)
+
+
 class RecruiterUser(Base):
     __tablename__ = "recruiter_users"
 
@@ -26,26 +36,16 @@ class RecruiterUser(Base):
     team_id = Column(
         Integer,
         ForeignKey("recruiter_teams.id"),
-        nullable=True
+        nullable=True,
     )
 
     role = Column(
         String(50),
-        default="recruiter"
+        default="recruiter",
     )
 
     is_active = Column(Boolean, default=True)
 
-class RecruiterTeam(Base):
-    __tablename__ = "recruiter_teams"
-
-    id = Column(Integer, primary_key=True, index=True)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    team_name = Column(String(255), nullable=False)
-
-    owner_id = Column(Integer, nullable=True)
 
 class AnalysisRecord(Base):
     __tablename__ = "analysis_records"
@@ -53,7 +53,17 @@ class AnalysisRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    recruiter_id = Column(Integer, ForeignKey("recruiter_users.id"), nullable=True)
+    recruiter_id = Column(
+        Integer,
+        ForeignKey("recruiter_users.id"),
+        nullable=True,
+    )
+
+    team_id = Column(
+        Integer,
+        ForeignKey("recruiter_teams.id"),
+        nullable=True,
+    )
 
     candidate_name = Column(String(255), nullable=True)
     resume_filename = Column(String(255), nullable=True)
@@ -86,12 +96,7 @@ class AnalysisRecord(Base):
 
     candidate_status = Column(String(50), default="screening")
     recruiter_notes = Column(Text, nullable=True)
+    candidate_tags = Column(Text, nullable=True)
     bookmarked = Column(Boolean, default=False)
 
     job_description = Column(Text, nullable=False)
-
-    team_id = Column(
-    Integer,
-    ForeignKey("recruiter_teams.id"),
-    nullable=True
-    )

@@ -2,7 +2,8 @@ from sqlalchemy import text
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db.database import Base, engine
+from app.db.database import Base
+from app.db.database import engine
 from app.db import models
 
 from app.routes.analyze import router as analyze_router
@@ -21,6 +22,7 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN team_id INTEGER",
         "ALTER TABLE analysis_records ADD COLUMN candidate_status VARCHAR(50) DEFAULT 'screening'",
         "ALTER TABLE analysis_records ADD COLUMN recruiter_notes TEXT",
+        "ALTER TABLE analysis_records ADD COLUMN candidate_tags TEXT",
         "ALTER TABLE analysis_records ADD COLUMN bookmarked BOOLEAN DEFAULT false",
         "ALTER TABLE recruiter_users ADD COLUMN team_id INTEGER",
         "ALTER TABLE recruiter_users ADD COLUMN role VARCHAR(50) DEFAULT 'recruiter'",
@@ -29,8 +31,10 @@ def run_startup_migrations():
     for query in migration_queries:
         try:
             print(f"RUNNING MIGRATION: {query}")
+
             with engine.begin() as connection:
                 connection.execute(text(query))
+
         except Exception as e:
             print(f"MIGRATION SKIPPED: {e}")
 
@@ -39,7 +43,7 @@ run_startup_migrations()
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.4.2"
+    version="2.5.0",
 )
 
 app.add_middleware(
@@ -70,5 +74,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.4.2",
+        "version": "2.5.0",
     }

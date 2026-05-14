@@ -72,6 +72,8 @@ export type RecruiterDashboardCandidate = {
   bookmarked: boolean;
   created_at: string;
   recommendation?: string | null;
+  notes?: string;
+  tags?: string;
 };
 
 export type RecruiterDashboardResponse = {
@@ -87,6 +89,11 @@ export type RecruiterDashboardResponse = {
     [key: string]: number;
   };
   recent_candidates: RecruiterDashboardCandidate[];
+};
+
+export type CandidateSearchResponse = {
+  count: number;
+  results: RecruiterDashboardCandidate[];
 };
 
 export type RewriteResponse = {
@@ -122,6 +129,7 @@ export async function signupRecruiter(
   companyName: string
 ): Promise<AuthResponse> {
   const formData = new FormData();
+
   formData.append("email", email);
   formData.append("password", password);
   formData.append("full_name", fullName);
@@ -143,6 +151,7 @@ export async function loginRecruiter(
   password: string
 ): Promise<AuthResponse> {
   const formData = new FormData();
+
   formData.append("email", email);
   formData.append("password", password);
 
@@ -162,6 +171,7 @@ export async function analyzeResume(
   file: File
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
+
   formData.append("job_description", jobDescription);
   formData.append("resume_file", file);
 
@@ -181,6 +191,7 @@ export async function rewriteResume(
   jobDescription: string
 ): Promise<RewriteResponse> {
   const formData = new FormData();
+
   formData.append("resume_text", resumeText);
   formData.append("job_description", jobDescription);
 
@@ -213,9 +224,7 @@ export async function getRecruiterDashboard(): Promise<RecruiterDashboardRespons
   );
 }
 
-export async function toggleCandidateBookmark(
-  candidateId: number
-) {
+export async function toggleCandidateBookmark(candidateId: number) {
   const response = await fetch(
     `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/bookmark`,
     {
@@ -270,5 +279,56 @@ export async function updateCandidateNotes(
   return parseJsonResponse(
     response,
     "Failed to update notes."
+  );
+}
+
+export async function updateCandidateTags(
+  candidateId: number,
+  tags: string
+) {
+  const formData = new FormData();
+
+  formData.append("tags", tags);
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/tags`,
+    {
+      method: "PATCH",
+      body: formData,
+    }
+  );
+
+  return parseJsonResponse(
+    response,
+    "Failed to update candidate tags."
+  );
+}
+
+export async function searchCandidates(filters: {
+  status?: string;
+  min_score?: number;
+  bookmarked?: boolean;
+}): Promise<CandidateSearchResponse> {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.append("status", filters.status);
+  }
+
+  if (filters.min_score !== undefined) {
+    params.append("min_score", String(filters.min_score));
+  }
+
+  if (filters.bookmarked !== undefined) {
+    params.append("bookmarked", String(filters.bookmarked));
+  }
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/search?${params.toString()}`
+  );
+
+  return parseJsonResponse<CandidateSearchResponse>(
+    response,
+    "Failed to search candidates."
   );
 }

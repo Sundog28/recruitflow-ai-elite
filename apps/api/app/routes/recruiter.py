@@ -32,6 +32,7 @@ def serialize_candidate(analysis: AnalysisRecord):
         "created_at": analysis.created_at.isoformat(),
         "recommendation": analysis.hiring_recommendation,
         "notes": analysis.recruiter_notes or "",
+        "tags": analysis.candidate_tags or "",
     }
 
 
@@ -88,6 +89,41 @@ def recruiter_dashboard():
         db.close()
 
 
+@router.get("/search")
+def recruiter_search(
+    status: str | None = None,
+    min_score: float | None = None,
+    bookmarked: bool | None = None,
+):
+    db: Session = SessionLocal()
+
+    try:
+        query = db.query(AnalysisRecord)
+
+        if status:
+            query = query.filter(AnalysisRecord.candidate_status == status)
+
+        if min_score is not None:
+            query = query.filter(AnalysisRecord.fit_score >= min_score)
+
+        if bookmarked is not None:
+            query = query.filter(AnalysisRecord.bookmarked == bookmarked)
+
+        results = (
+            query.order_by(desc(AnalysisRecord.created_at))
+            .limit(100)
+            .all()
+        )
+
+        return {
+            "count": len(results),
+            "results": [serialize_candidate(r) for r in results],
+        }
+
+    finally:
+        db.close()
+
+
 @router.patch("/candidates/{candidate_id}/status")
 def update_candidate_status(
     candidate_id: int,
@@ -115,6 +151,7 @@ def update_candidate_status(
             )
 
         analysis.candidate_status = status
+
         db.commit()
         db.refresh(analysis)
 
@@ -185,6 +222,40 @@ def update_candidate_notes(
 
         return {
             "message": "Recruiter notes updated.",
+            "candidate": serialize_candidate(analysis),
+        }
+
+    finally:
+        db.close()
+
+
+@router.patch("/candidates/{candidate_id}/tags")
+def update_candidate_tags(
+    candidate_id: int,
+    tags: str = Form(""),
+):
+    db: Session = SessionLocal()
+
+    try:
+        analysis = (
+            db.query(AnalysisRecord)
+            .filter(AnalysisRecord.id == candidate_id)
+            .first()
+        )
+
+        if not analysis:
+            raise HTTPException(
+                status_code=404,
+                detail="Candidate not found.",
+            )
+
+        analysis.candidate_tags = tags
+
+        db.commit()
+        db.refresh(analysis)
+
+        return {
+            "message": "Candidate tags updated.",
             "candidate": serialize_candidate(analysis),
         }
 
