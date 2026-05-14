@@ -30,7 +30,6 @@ export default function RecruiterKanbanBoard() {
   async function loadDashboard() {
     try {
       const data = await getRecruiterDashboard();
-
       setCandidates(data.recent_candidates || []);
     } catch (error) {
       console.error(error);
@@ -48,10 +47,7 @@ export default function RecruiterKanbanBoard() {
     newStatus: string
   ) {
     try {
-      await updateCandidateStatus(
-        candidateId,
-        newStatus
-      );
+      await updateCandidateStatus(candidateId, newStatus);
 
       setCandidates((prev) =>
         prev.map((candidate) =>
@@ -70,68 +66,62 @@ export default function RecruiterKanbanBoard() {
 
   if (loading) {
     return (
-      <div className="text-white text-lg">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-lg text-white">
         Loading ATS board...
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="grid grid-cols-5 gap-4 min-w-[1400px]">
+    <div className="w-full overflow-x-auto pb-4">
+      <div className="grid min-w-[1100px] grid-cols-5 gap-4">
+        {STATUSES.map((status) => {
+          const statusCandidates = candidates.filter(
+            (candidate) => candidate.status === status
+          );
 
-        {STATUSES.map((status) => (
-          <div
-            key={status}
-            className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 min-h-[700px]"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white text-lg font-bold capitalize">
-                {status}
-              </h2>
+          return (
+            <div
+              key={status}
+              className="min-h-[700px] rounded-2xl border border-white/10 bg-black/20 p-4"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold capitalize text-white">
+                  {status}
+                </h2>
 
-              <div className="bg-zinc-800 text-zinc-300 text-sm px-2 py-1 rounded-lg">
-                {
-                  candidates.filter(
-                    (c) => c.status === status
-                  ).length
-                }
+                <div className="rounded-lg bg-white/10 px-2 py-1 text-sm text-slate-300">
+                  {statusCandidates.length}
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-3">
-
-              {candidates
-                .filter(
-                  (candidate) =>
-                    candidate.status === status
-                )
-                .map((candidate) => (
+              <div className="space-y-3">
+                {statusCandidates.map((candidate) => (
                   <div
                     key={candidate.id}
-                    className="bg-zinc-800 rounded-xl p-4 border border-zinc-700"
+                    className="rounded-xl border border-white/10 bg-white/5 p-4"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-white font-semibold">
+                        <h3 className="font-semibold text-white">
                           {candidate.candidate_name ||
                             "Unnamed Candidate"}
                         </h3>
 
-                        <p className="text-zinc-400 text-sm">
+                        <p className="text-sm text-slate-400">
                           {candidate.resume_filename}
                         </p>
                       </div>
 
-                      {candidate.bookmarked && (
+                      {candidate.bookmarked ? (
                         <div className="text-yellow-400">
                           ★
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="mt-3">
-                      <div className="text-sm text-zinc-400">
+                      <div className="text-sm text-slate-400">
                         Fit Score
                       </div>
 
@@ -140,7 +130,7 @@ export default function RecruiterKanbanBoard() {
                       </div>
                     </div>
 
-                    <div className="mt-3 text-sm text-zinc-300">
+                    <div className="mt-3 text-sm leading-5 text-slate-300">
                       {candidate.recommendation}
                     </div>
 
@@ -153,13 +143,10 @@ export default function RecruiterKanbanBoard() {
                             e.target.value
                           )
                         }
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-violet-400/60"
                       >
                         {STATUSES.map((option) => (
-                          <option
-                            key={option}
-                            value={option}
-                          >
+                          <option key={option} value={option}>
                             {option}
                           </option>
                         ))}
@@ -167,11 +154,10 @@ export default function RecruiterKanbanBoard() {
                     </div>
                   </div>
                 ))}
-
+              </div>
             </div>
-          </div>
-        ))}
-
+          );
+        })}
       </div>
     </div>
   );
