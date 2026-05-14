@@ -23,8 +23,29 @@ class RecruiterUser(Base):
     company_name = Column(String(255), nullable=True)
     hashed_password = Column(String(255), nullable=False)
 
+    team_id = Column(
+        Integer,
+        ForeignKey("recruiter_teams.id"),
+        nullable=True
+    )
+
+    role = Column(
+        String(50),
+        default="recruiter"
+    )
+
     is_active = Column(Boolean, default=True)
 
+class RecruiterTeam(Base):
+    __tablename__ = "recruiter_teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    team_name = Column(String(255), nullable=False)
+
+    owner_id = Column(Integer, nullable=True)
 
 class AnalysisRecord(Base):
     __tablename__ = "analysis_records"
@@ -68,3 +89,9 @@ class AnalysisRecord(Base):
     bookmarked = Column(Boolean, default=False)
 
     job_description = Column(Text, nullable=False)
+
+    team_id = Column(
+    Integer,
+    ForeignKey("recruiter_teams.id"),
+    nullable=True
+    )
