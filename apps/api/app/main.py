@@ -1,7 +1,7 @@
 from sqlalchemy import text
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.routes.billing import router as billing_router
 from app.db.database import Base
 from app.db.database import engine
 from app.db import models
@@ -60,7 +60,7 @@ app.include_router(auth_router)
 app.include_router(recruiter_router)
 app.include_router(team_router)
 app.include_router(copilot_router)
-
+app.include_router(billing_router)
 
 @app.get("/")
 def root():

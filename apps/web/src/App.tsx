@@ -559,35 +559,41 @@ ${result.score_explanation?.join("\n") || "N/A"}
     </form>
   </section>
 ) : (
-  <section className="mb-10 rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <p className="text-sm uppercase tracking-[0.35em] text-emerald-300">
-          Recruiter Workspace
-        </p>
+  <>
+    <section className="mb-10 rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm uppercase tracking-[0.35em] text-emerald-300">
+            Recruiter Workspace
+          </p>
 
-        <h2 className="mt-2 text-3xl font-bold text-white">
-          Welcome back, {recruiter.full_name}
-        </h2>
+          <h2 className="mt-2 text-3xl font-bold text-white">
+            Welcome back, {recruiter.full_name}
+          </h2>
 
-        <p className="mt-2 text-slate-300">
-          {recruiter.company_name}
-        </p>
+          <p className="mt-2 text-slate-300">
+            {recruiter.company_name}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+        >
+          Logout
+        </button>
       </div>
+    </section>
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
-      >
-        Logout
-      </button>
-    </div>
-  </section>
-)}
+    <RecruiterDashboard />
 
-{recruiter ? <RecruiterDashboard /> : null}
+    <details className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_45px_rgba(139,92,246,0.12)]">
+      <summary className="cursor-pointer text-2xl font-bold text-white">
+        Recruiter AI Tools
+      </summary>
 
+      <div className="mt-6 space-y-10">
         {copyMessage ? (
           <div className="mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-emerald-200">
             {copyMessage}
@@ -720,6 +726,11 @@ ${result.score_explanation?.join("\n") || "N/A"}
             ) : null}
           </div>
         </section>
+
+                    </div>
+    </details>
+  </>
+)}
 
         {result ? (
           <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
