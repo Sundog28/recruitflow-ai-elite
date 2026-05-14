@@ -44,6 +44,16 @@ class RecruiterUser(Base):
         default="recruiter",
     )
 
+    plan = Column(
+        String(50),
+        default="free",
+    )
+
+    analysis_count = Column(
+        Integer,
+        default=0,
+    )
+
     is_active = Column(Boolean, default=True)
 
 
