@@ -74,7 +74,7 @@ export default function RecruiterKanbanBoard() {
 
   return (
     <div className="w-full overflow-x-auto pb-4">
-      <div className="grid min-w-[1100px] grid-cols-5 gap-4">
+      <div className="grid min-w-[950px] grid-cols-5 gap-3">
         {STATUSES.map((status) => {
           const statusCandidates = candidates.filter(
             (candidate) => candidate.status === status
@@ -83,7 +83,7 @@ export default function RecruiterKanbanBoard() {
           return (
             <div
               key={status}
-              className="min-h-[700px] rounded-2xl border border-white/10 bg-black/20 p-4"
+              className="min-h-[700px] min-w-[180px] rounded-2xl border border-white/10 bg-black/20 p-3"
             >
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-bold capitalize text-white">
