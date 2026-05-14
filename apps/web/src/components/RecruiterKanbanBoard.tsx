@@ -78,12 +78,12 @@ export default function RecruiterKanbanBoard() {
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className="flex gap-6 min-w-[1400px]">
+      <div className="grid grid-cols-5 gap-4 min-w-[1400px]">
 
         {STATUSES.map((status) => (
           <div
             key={status}
-            className="bg-zinc-900 rounded-2xl p-4 w-[260px] border border-zinc-800"
+            className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 min-h-[700px]"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-white text-lg font-bold capitalize">
