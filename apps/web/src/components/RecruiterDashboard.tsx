@@ -1,172 +1,257 @@
 import { useEffect, useState } from "react";
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  "https://recruitflow-ai-elite-api.onrender.com";
+import {
+  getRecruiterDashboard,
+  toggleCandidateBookmark,
+  updateCandidateStatus,
+  updateCandidateNotes,
+} from "../lib/api";
+
+type Candidate = {
+  id: number;
+  candidate_name?: string;
+  resume_filename?: string;
+  fit_score: number;
+  status: string;
+  bookmarked: boolean;
+  created_at: string;
+  recommendation?: string;
+  notes?: string;
+};
 
 type DashboardData = {
   total_candidates: number;
   bookmarked_candidates: number;
   average_fit_score: number;
-  pipeline: Record<string, number>;
-  recent_candidates: {
-    id: number;
-    candidate_name?: string;
-    fit_score: number;
-    status: string;
-    recommendation?: string;
-  }[];
+
+  pipeline: {
+    screening: number;
+    interview: number;
+    offer: number;
+    hired: number;
+    rejected: number;
+  };
+
+  recent_candidates: Candidate[];
 };
 
 export default function RecruiterDashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [dashboard, setDashboard] =
+    useState<DashboardData | null>(null);
+
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const response = await fetch(
-          `${API_BASE}/api/v1/recruiter/dashboard`
-        );
-
-        const json = await response.json();
-
-        setData(json);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+  async function loadDashboard() {
+    try {
+      const data = await getRecruiterDashboard();
+      setDashboard(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     loadDashboard();
   }, []);
 
+  async function handleBookmark(candidateId: number) {
+    try {
+      await toggleCandidateBookmark(candidateId);
+      await loadDashboard();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleStatusChange(
+    candidateId: number,
+    status: string
+  ) {
+    try {
+      await updateCandidateStatus(candidateId, status);
+      await loadDashboard();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleNotesSave(
+    candidateId: number,
+    notes: string
+  ) {
+    try {
+      await updateCandidateNotes(candidateId, notes);
+      await loadDashboard();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   if (loading) {
     return (
-      <section className="rounded-3xl border border-purple-500/20 bg-[#0f172a]/80 p-8 mb-8">
-        <h2 className="text-3xl font-bold text-white">
-          Recruiter Workspace
-        </h2>
-
-        <p className="text-gray-400 mt-4">
-          Loading recruiter analytics...
-        </p>
-      </section>
+      <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 text-white">
+        Loading recruiter dashboard...
+      </div>
     );
   }
 
-  if (!data) {
-    return (
-      <section className="rounded-3xl border border-red-500/20 bg-[#0f172a]/80 p-8 mb-8">
-        <h2 className="text-3xl font-bold text-white">
-          Recruiter Workspace
-        </h2>
-
-        <p className="text-red-400 mt-4">
-          Failed to load recruiter dashboard.
-        </p>
-      </section>
-    );
+  if (!dashboard) {
+    return null;
   }
 
   return (
-    <section className="rounded-3xl border border-purple-500/20 bg-[#0f172a]/80 p-8 mb-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <p className="text-xs tracking-[0.35em] text-emerald-400 uppercase">
-            Recruiter Workspace
-          </p>
+    <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 text-white">
+      <h2 className="mb-6 text-3xl font-bold">
+        Recruiter Workspace
+      </h2>
 
-          <h2 className="text-4xl font-bold text-white mt-2">
-            Hiring Pipeline Dashboard
-          </h2>
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-2xl bg-white/5 p-5">
+          <div className="text-sm text-slate-400">
+            Total Candidates
+          </div>
+
+          <div className="mt-2 text-4xl font-bold">
+            {dashboard.total_candidates}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white/5 p-5">
+          <div className="text-sm text-slate-400">
+            Average Fit Score
+          </div>
+
+          <div className="mt-2 text-4xl font-bold">
+            {dashboard.average_fit_score}%
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white/5 p-5">
+          <div className="text-sm text-slate-400">
+            Bookmarked Candidates
+          </div>
+
+          <div className="mt-2 text-4xl font-bold">
+            {dashboard.bookmarked_candidates}
+          </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <div className="rounded-2xl bg-[#111827] p-6 border border-white/5">
-          <p className="text-gray-400 text-sm">Total Candidates</p>
-
-          <h3 className="text-4xl font-bold text-white mt-3">
-            {data.total_candidates}
-          </h3>
-        </div>
-
-        <div className="rounded-2xl bg-[#111827] p-6 border border-white/5">
-          <p className="text-gray-400 text-sm">Bookmarked</p>
-
-          <h3 className="text-4xl font-bold text-white mt-3">
-            {data.bookmarked_candidates}
-          </h3>
-        </div>
-
-        <div className="rounded-2xl bg-[#111827] p-6 border border-white/5">
-          <p className="text-gray-400 text-sm">Average Fit Score</p>
-
-          <h3 className="text-4xl font-bold text-emerald-400 mt-3">
-            {data.average_fit_score}
-          </h3>
-        </div>
-      </div>
-
-      <div className="rounded-2xl bg-[#111827] p-6 border border-white/5 mb-8">
-        <h3 className="text-2xl font-bold text-white mb-6">
-          Pipeline Status
-        </h3>
-
-        <div className="grid md:grid-cols-5 gap-4">
-          {Object.entries(data.pipeline).map(([status, count]) => (
-            <div
-              key={status}
-              className="rounded-xl bg-[#0b1220] p-4 border border-white/5"
-            >
-              <p className="text-sm text-gray-400 capitalize">
-                {status}
-              </p>
-
-              <p className="text-3xl font-bold text-white mt-2">
-                {count}
-              </p>
+      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+        {Object.entries(dashboard.pipeline).map(([key, value]) => (
+          <div
+            key={key}
+            className="rounded-2xl bg-white/5 p-4 text-center"
+          >
+            <div className="text-sm uppercase text-slate-400">
+              {key}
             </div>
-          ))}
-        </div>
+
+            <div className="mt-2 text-2xl font-bold">
+              {value}
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className="rounded-2xl bg-[#111827] p-6 border border-white/5">
-        <h3 className="text-2xl font-bold text-white mb-6">
-          Recent Candidates
-        </h3>
-
-        <div className="space-y-4">
-          {data.recent_candidates.map((candidate) => (
-            <div
-              key={candidate.id}
-              className="rounded-xl bg-[#0b1220] p-4 border border-white/5 flex items-center justify-between"
-            >
+      <div className="space-y-5">
+        {dashboard.recent_candidates.map((candidate) => (
+          <div
+            key={candidate.id}
+            className="rounded-2xl border border-white/10 bg-black/20 p-5"
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-white font-semibold">
+                <h3 className="text-xl font-semibold">
                   {candidate.candidate_name || "Unknown Candidate"}
+                </h3>
+
+                <p className="text-sm text-slate-400">
+                  {candidate.resume_filename}
                 </p>
 
-                <p className="text-sm text-gray-400 mt-1 capitalize">
-                  {candidate.status}
+                <p className="mt-2 text-sm text-slate-300">
+                  {candidate.recommendation}
                 </p>
               </div>
 
               <div className="text-right">
-                <p className="text-2xl font-bold text-emerald-400">
-                  {candidate.fit_score}
-                </p>
+                <div className="text-3xl font-bold text-cyan-300">
+                  {candidate.fit_score}%
+                </div>
 
-                <p className="text-xs text-gray-500">
-                  fit score
-                </p>
+                <button
+                  onClick={() =>
+                    handleBookmark(candidate.id)
+                  }
+                  className="mt-3 rounded-xl border border-yellow-400/30 px-4 py-2 text-sm text-yellow-300 transition hover:bg-yellow-400/10"
+                >
+                  {candidate.bookmarked
+                    ? "★ Bookmarked"
+                    : "☆ Bookmark"}
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm text-slate-400">
+                Candidate Status
+              </label>
+
+              <select
+                value={candidate.status}
+                onChange={(e) =>
+                  handleStatusChange(
+                    candidate.id,
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+              >
+                <option value="screening">
+                  Screening
+                </option>
+
+                <option value="interview">
+                  Interview
+                </option>
+
+                <option value="offer">
+                  Offer
+                </option>
+
+                <option value="hired">
+                  Hired
+                </option>
+
+                <option value="rejected">
+                  Rejected
+                </option>
+              </select>
+            </div>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm text-slate-400">
+                Recruiter Notes
+              </label>
+
+              <textarea
+                defaultValue={candidate.notes || ""}
+                placeholder="Add recruiter notes..."
+                className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+                onBlur={(e) =>
+                  handleNotesSave(
+                    candidate.id,
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
