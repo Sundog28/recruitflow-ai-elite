@@ -1,18 +1,36 @@
 def generate_candidate_summary(candidate):
 
+    fit_score = candidate.fit_score or 0
+
+    predicted_label = (
+        candidate.predicted_label
+        or "potential"
+    )
+
+    skill_score = candidate.skill_score or 0
+
+    project_score = (
+        candidate.project_relevance_score or 0
+    )
+
+    candidate_name = (
+        candidate.candidate_name
+        or "This candidate"
+    )
+
     strengths = []
 
-    if candidate.fit_score >= 80:
+    if fit_score >= 80:
         strengths.append(
             "Strong overall technical alignment."
         )
 
-    if candidate.skill_score and candidate.skill_score >= 80:
+    if skill_score >= 80:
         strengths.append(
             "Excellent required skill coverage."
         )
 
-    if candidate.project_relevance_score and candidate.project_relevance_score >= 75:
+    if project_score >= 75:
         strengths.append(
             "Projects appear highly relevant."
         )
@@ -24,16 +42,16 @@ def generate_candidate_summary(candidate):
 
     risk = "Low"
 
-    if candidate.fit_score < 70:
+    if fit_score < 70:
         risk = "Medium"
 
-    if candidate.fit_score < 50:
+    if fit_score < 50:
         risk = "High"
 
     return {
         "summary":
-            f"{candidate.candidate_name} appears to be a "
-            f"{candidate.predicted_label} candidate.",
+            f"{candidate_name} appears to be a "
+            f"{predicted_label} candidate.",
 
         "strengths": strengths,
 
