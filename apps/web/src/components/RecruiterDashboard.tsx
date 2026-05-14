@@ -1,3 +1,5 @@
+import RecruiterKanbanBoard from "./RecruiterKanbanBoard";
+
 import { useEffect, useState } from "react";
 
 import {
@@ -154,6 +156,10 @@ export default function RecruiterDashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mb-10">
+        <RecruiterKanbanBoard />
       </div>
 
       <div className="space-y-5">
