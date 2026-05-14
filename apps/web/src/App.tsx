@@ -1,6 +1,6 @@
 import RecruiterDashboard from "./components/RecruiterDashboard";
 import { useEffect, useMemo, useState } from "react";
-
+import PricingSection from "./components/PricingSection";
 import {
   analyzeResume,
   getHistory,
@@ -888,6 +888,8 @@ ${result.score_explanation?.join("\n") || "N/A"}
             ) : null}
           </section>
         ) : null}
+
+        <PricingSection />
 
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
