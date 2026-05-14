@@ -29,16 +29,17 @@ def run_startup_migrations():
     with engine.begin() as connection:
         for query in migration_queries:
             try:
+                print(f"RUNNING MIGRATION: {query}")
                 connection.execute(text(query))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"MIGRATION SKIPPED: {e}")
 
 
 run_startup_migrations()
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.4.0"
+    version="2.4.1"
 )
 
 app.add_middleware(
@@ -69,5 +70,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.4.0",
+        "version": "2.4.1",
     }
