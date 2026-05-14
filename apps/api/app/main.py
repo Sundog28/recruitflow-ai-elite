@@ -26,20 +26,20 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN role VARCHAR(50) DEFAULT 'recruiter'",
     ]
 
-    with engine.begin() as connection:
-        for query in migration_queries:
-            try:
-                print(f"RUNNING MIGRATION: {query}")
+    for query in migration_queries:
+        try:
+            print(f"RUNNING MIGRATION: {query}")
+            with engine.begin() as connection:
                 connection.execute(text(query))
-            except Exception as e:
-                print(f"MIGRATION SKIPPED: {e}")
+        except Exception as e:
+            print(f"MIGRATION SKIPPED: {e}")
 
 
 run_startup_migrations()
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.4.1"
+    version="2.4.2"
 )
 
 app.add_middleware(
@@ -70,5 +70,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.4.1",
+        "version": "2.4.2",
     }
