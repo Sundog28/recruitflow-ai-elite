@@ -76,7 +76,7 @@ export default function PricingSection() {
           onClick={handleUpgrade}
           className="mt-10 rounded-2xl bg-emerald-500 px-8 py-4 text-lg font-bold text-black transition hover:scale-105 hover:bg-emerald-400"
         >
-          Upgrade to RecruitFlow Pro
+          Start Free Trial
         </button>
       </div>
     </section>
