@@ -8,6 +8,8 @@ import {
   loginRecruiter,
   rewriteResume,
   signupRecruiter,
+  getRecruiterAccountStatus,
+  type RecruiterAccountStatus,
   type AnalyzeResponse,
   type HistoryItem,
 } from "./lib/api";
@@ -153,6 +155,11 @@ function SectionCard({
 }
 
 export default function App() {
+  const [accountStatus, setAccountStatus] =
+    useState<RecruiterAccountStatus | null>(null);
+
+  const isProUser =
+    accountStatus?.subscription_status === "active";
   const [jobDescription, setJobDescription] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState("");
@@ -200,6 +207,18 @@ export default function App() {
 
   useEffect(() => {
     loadHistory();
+    async function loadAccountStatus() {
+      try {
+        const data =
+          await getRecruiterAccountStatus(1);
+
+        setAccountStatus(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadAccountStatus();
   }, []);
 
   const derivedAts = useMemo(() => {
@@ -569,8 +588,29 @@ ${result.score_explanation?.join("\n") || "N/A"}
       </div>
     </section>
 
-    <RecruiterDashboard />
+    {isProUser ? (
+  <RecruiterDashboard />
+) : (
+  <div className="mb-8 rounded-3xl border border-yellow-500/20 bg-yellow-500/5 p-8 text-white">
+    <div className="text-2xl font-bold">
+      RecruitFlow Pro Required
+    </div>
 
+    <p className="mt-3 text-slate-300">
+      Upgrade to unlock:
+    </p>
+
+    <ul className="mt-4 space-y-2 text-slate-200">
+      <li>• ATS Kanban Pipeline</li>
+      <li>• Recruiter Copilot</li>
+      <li>• AI Resume Rewriting</li>
+      <li>• Candidate Bookmarking</li>
+      <li>• Enterprise Recruiting Tools</li>
+    </ul>
+  </div>
+)}
+
+  {isProUser && (
     <details className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_45px_rgba(139,92,246,0.12)]">
       <summary className="cursor-pointer text-2xl font-bold text-white">
         Recruiter AI Tools
@@ -712,8 +752,9 @@ ${result.score_explanation?.join("\n") || "N/A"}
 
                     </div>
     </details>
-  </>
-)}
+      </>
+    )}
+  )}
 
         {result ? (
           <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
@@ -872,7 +913,7 @@ ${result.score_explanation?.join("\n") || "N/A"}
           </section>
         ) : null}
 
-        <PricingSection />
+        {!isProUser && <PricingSection />}
 
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
