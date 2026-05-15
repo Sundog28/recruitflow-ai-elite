@@ -42,20 +42,16 @@ def create_checkout_session():
     try:
         session = stripe.checkout.Session.create(
             mode="subscription",
-
             line_items=[
                 {
                     "price": PRICE_ID,
                     "quantity": 1,
                 }
             ],
-
             subscription_data={
                 "trial_period_days": 7,
             },
-
             success_url=f"{FRONTEND_URL}/?checkout=success",
-
             cancel_url=f"{FRONTEND_URL}/?checkout=cancelled",
         )
 
@@ -131,12 +127,12 @@ async def stripe_webhook(request: Request):
 
             if recruiter:
                 subscription = stripe.Subscription.retrieve(
-                subscription_id
-            )
+                    subscription_id
+                )
 
-            status = subscription.get("status")
+                status = subscription.get("status")
 
-            recruiter.subscription_status = status
+                recruiter.subscription_status = status
                 recruiter.plan_name = "pro"
                 recruiter.plan = "pro"
                 recruiter.stripe_customer_id = customer_id
