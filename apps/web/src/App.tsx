@@ -159,7 +159,8 @@ export default function App() {
     useState<RecruiterAccountStatus | null>(null);
 
   const isProUser =
-    accountStatus?.subscription_status === "active";
+    accountStatus?.subscription_status === "active" ||
+    accountStatus?.subscription_status === "trialing";;
   const [jobDescription, setJobDescription] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState("");
