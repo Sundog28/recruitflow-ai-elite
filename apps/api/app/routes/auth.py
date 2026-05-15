@@ -21,11 +21,10 @@ def serialize_user(user: RecruiterUser):
         "email": user.email,
         "full_name": user.full_name,
         "company_name": user.company_name,
-        "plan": user.plan or "free",
-        "plan_name": user.plan_name or "free",
-        "subscription_status": user.subscription_status or "free",
-        "analysis_count": user.analysis_count or 0,
-        "analyses_used": user.analyses_used or 0,
+        "plan": getattr(user, "plan", "free") or "free",
+        "plan_name": getattr(user, "plan_name", "free") or "free",
+        "subscription_status": getattr(user, "subscription_status", "free") or "free",
+        "analysis_count": getattr(user, "analysis_count", 0) or 0,
     }
 
 

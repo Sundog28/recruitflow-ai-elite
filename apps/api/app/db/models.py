@@ -76,6 +76,20 @@ class RecruiterUser(Base):
 
     is_active = Column(Boolean, default=True)
 
+    subscription_status = Column(
+        String(50),
+        default="free"
+    )
+
+    plan_name = Column(
+        String(50),
+        default="free"
+    )
+
+    analyses_used = Column(
+        Integer,
+        default=0
+    )
 
 class AnalysisRecord(Base):
     __tablename__ = "analysis_records"

@@ -31,6 +31,9 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
+        "ALTER TABLE recruiter_users ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
+        "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(50) DEFAULT 'free'",
+        "ALTER TABLE recruiter_users ADD COLUMN analyses_used INTEGER DEFAULT 0",
     ]
 
     for query in migration_queries:
