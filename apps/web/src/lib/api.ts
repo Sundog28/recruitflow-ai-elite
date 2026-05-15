@@ -100,6 +100,18 @@ export type RewriteResponse = {
   rewritten_resume: string;
 };
 
+export type RecruiterAccountStatus = {
+  id: number;
+  email: string;
+  full_name?: string | null;
+  company_name?: string | null;
+  plan: string;
+  plan_name: string;
+  subscription_status: string;
+  analysis_count: number;
+  analyses_used: number;
+};
+
 async function parseJsonResponse<T>(
   response: Response,
   fallbackMessage: string
@@ -330,5 +342,18 @@ export async function searchCandidates(filters: {
   return parseJsonResponse<CandidateSearchResponse>(
     response,
     "Failed to search candidates."
+  );
+}
+
+export async function getRecruiterAccountStatus(
+  recruiterId: number
+): Promise<RecruiterAccountStatus> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/auth/me/${recruiterId}`
+  );
+
+  return parseJsonResponse<RecruiterAccountStatus>(
+    response,
+    "Failed to fetch recruiter account status."
   );
 }

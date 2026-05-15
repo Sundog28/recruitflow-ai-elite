@@ -4,7 +4,8 @@ from fastapi import HTTPException
 from fastapi import Form
 
 from sqlalchemy.orm import Session
-
+from fastapi import HTTPException
+from app.db.database import SessionLocal
 from app.db.database import get_db
 from app.db.models import RecruiterUser
 from app.services.auth_service import create_access_token
@@ -85,3 +86,35 @@ def login(
             "company_name": user.company_name,
         },
     }
+
+    @router.get("/me/{recruiter_id}")
+def get_current_recruiter_status(recruiter_id: int):
+    db = SessionLocal()
+
+    try:
+        recruiter = (
+            db.query(RecruiterUser)
+            .filter(RecruiterUser.id == recruiter_id)
+            .first()
+        )
+
+        if not recruiter:
+            raise HTTPException(
+                status_code=404,
+                detail="Recruiter not found.",
+            )
+
+        return {
+            "id": recruiter.id,
+            "email": recruiter.email,
+            "full_name": recruiter.full_name,
+            "company_name": recruiter.company_name,
+            "plan": recruiter.plan or "free",
+            "plan_name": recruiter.plan_name or "free",
+            "subscription_status": recruiter.subscription_status or "free",
+            "analysis_count": recruiter.analysis_count or 0,
+            "analyses_used": recruiter.analyses_used or 0,
+        }
+
+    finally:
+        db.close()
