@@ -166,3 +166,47 @@ async def stripe_webhook(request: Request):
 
     finally:
         db.close()
+
+@router.post("/create-customer-portal")
+def create_customer_portal():
+
+    db: Session = SessionLocal()
+
+    try:
+
+        recruiter = (
+            db.query(RecruiterUser)
+            .filter(RecruiterUser.id == 1)
+            .first()
+        )
+
+        if not recruiter:
+            raise HTTPException(
+                status_code=404,
+                detail="Recruiter not found.",
+            )
+
+        if not recruiter.stripe_customer_id:
+            raise HTTPException(
+                status_code=400,
+                detail="No Stripe customer found.",
+            )
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=recruiter.stripe_customer_id,
+
+            return_url=FRONTEND_URL,
+        )
+
+        return {
+            "portal_url": portal_session.url,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+
+    finally:
+        db.close()

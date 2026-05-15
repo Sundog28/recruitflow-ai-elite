@@ -78,6 +78,25 @@ export default function PricingSection() {
         >
           Start Free Trial
         </button>
+        <button
+          onClick={async () => {
+            const response = await fetch(
+              "https://recruitflow-ai-elite-api.onrender.com/api/v1/billing/create-customer-portal",
+              {
+                method: "POST",
+              }
+            );
+
+            const data = await response.json()
+
+            if (data.portal_url) {
+              window.location.href = data.portal_url
+            }
+          }}
+          className="mt-4 w-full rounded-xl border border-white/10 bg-zinc-900 py-4 text-white transition hover:bg-zinc-800"
+        >
+          Manage Billing
+        </button>
       </div>
     </section>
   );
