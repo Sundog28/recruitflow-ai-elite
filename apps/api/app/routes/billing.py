@@ -169,11 +169,9 @@ async def stripe_webhook(request: Request):
 
 @router.post("/create-customer-portal")
 def create_customer_portal():
-
     db: Session = SessionLocal()
 
     try:
-
         recruiter = (
             db.query(RecruiterUser)
             .filter(RecruiterUser.id == 1)
@@ -194,12 +192,15 @@ def create_customer_portal():
 
         portal_session = stripe.billing_portal.Session.create(
             customer=recruiter.stripe_customer_id,
-
             return_url=FRONTEND_URL,
         )
 
         return {
             "portal_url": portal_session.url,
+        }
+
+    finally:
+        db.close()al_session.url,
         }
 
     except Exception as e:

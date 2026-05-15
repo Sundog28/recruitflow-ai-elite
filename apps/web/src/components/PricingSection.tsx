@@ -87,10 +87,10 @@ export default function PricingSection() {
               }
             );
 
-            const data = await response.json()
+            const data = await response.json();
 
             if (data.portal_url) {
-              window.location.href = data.portal_url
+              window.location.href = data.portal_url;
             }
           }}
           className="mt-4 w-full rounded-xl border border-white/10 bg-zinc-900 py-4 text-white transition hover:bg-zinc-800"
