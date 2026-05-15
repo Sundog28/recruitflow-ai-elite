@@ -752,9 +752,9 @@ ${result.score_explanation?.join("\n") || "N/A"}
 
                     </div>
     </details>
+        )}
       </>
     )}
-  )}
 
         {result ? (
           <section className="mt-10 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.14)]">
