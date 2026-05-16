@@ -39,9 +39,25 @@ def create_checkout_session():
             detail="Missing STRIPE_PRICE_ID.",
         )
 
+    db: Session = SessionLocal()
+
     try:
+        recruiter = (
+            db.query(RecruiterUser)
+            .filter(RecruiterUser.id == 1)
+            .first()
+        )
+
+        if not recruiter:
+            raise HTTPException(
+                status_code=404,
+                detail="Recruiter not found.",
+            )
+
         session = stripe.checkout.Session.create(
             mode="subscription",
+            customer_email=recruiter.email,
+            client_reference_id=str(recruiter.id),
             line_items=[
                 {
                     "price": PRICE_ID,
@@ -57,11 +73,17 @@ def create_checkout_session():
 
         return {"checkout_url": session.url}
 
+    except HTTPException:
+        raise
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e),
         )
+
+    finally:
+        db.close()
 
 
 @router.post("/create-customer-portal")
@@ -93,6 +115,15 @@ def create_customer_portal():
         )
 
         return {"portal_url": portal_session.url}
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
 
     finally:
         db.close()
@@ -137,13 +168,22 @@ async def stripe_webhook(request: Request):
             customer_id = session.get("customer")
             subscription_id = session.get("subscription")
 
+            recruiter_id = session.get("client_reference_id")
+
             customer_email = (
                 session.get("customer_details", {}) or {}
             ).get("email")
 
             recruiter = None
 
-            if customer_email:
+            if recruiter_id:
+                recruiter = (
+                    db.query(RecruiterUser)
+                    .filter(RecruiterUser.id == int(recruiter_id))
+                    .first()
+                )
+
+            if not recruiter and customer_email:
                 recruiter = (
                     db.query(RecruiterUser)
                     .filter(RecruiterUser.email == customer_email)
