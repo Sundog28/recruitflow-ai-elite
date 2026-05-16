@@ -198,13 +198,7 @@ async def stripe_webhook(request: Request):
                 )
 
             if recruiter:
-                subscription = stripe.Subscription.retrieve(
-                    subscription_id
-                )
-
-                status = subscription.get("status")
-
-                recruiter.subscription_status = status
+                recruiter.subscription_status = "trialing"
                 recruiter.plan_name = "pro"
                 recruiter.plan = "pro"
                 recruiter.stripe_customer_id = customer_id
