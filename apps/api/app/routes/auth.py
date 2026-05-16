@@ -154,3 +154,37 @@ def dev_upgrade_recruiter(recruiter_id: int):
 
     finally:
         db.close()
+
+@router.patch("/me/{recruiter_id}/dev-downgrade")
+def dev_downgrade_recruiter(recruiter_id: int):
+    db = SessionLocal()
+
+    try:
+        recruiter = (
+            db.query(RecruiterUser)
+            .filter(RecruiterUser.id == recruiter_id)
+            .first()
+        )
+
+        if not recruiter:
+            raise HTTPException(
+                status_code=404,
+                detail="Recruiter not found.",
+            )
+
+        recruiter.subscription_status = "free"
+        recruiter.plan_name = "free"
+        recruiter.plan = "free"
+        recruiter.stripe_customer_id = None
+        recruiter.stripe_subscription_id = None
+
+        db.commit()
+        db.refresh(recruiter)
+
+        return {
+            "message": "Recruiter downgraded for testing.",
+            "user": serialize_user(recruiter),
+        }
+
+    finally:
+        db.close()
