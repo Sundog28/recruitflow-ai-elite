@@ -55,15 +55,47 @@ def create_checkout_session():
             cancel_url=f"{FRONTEND_URL}/?checkout=cancelled",
         )
 
-        return {
-            "checkout_url": session.url,
-        }
+        return {"checkout_url": session.url}
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e),
         )
+
+
+@router.post("/create-customer-portal")
+def create_customer_portal():
+    db: Session = SessionLocal()
+
+    try:
+        recruiter = (
+            db.query(RecruiterUser)
+            .filter(RecruiterUser.id == 1)
+            .first()
+        )
+
+        if not recruiter:
+            raise HTTPException(
+                status_code=404,
+                detail="Recruiter not found.",
+            )
+
+        if not recruiter.stripe_customer_id:
+            raise HTTPException(
+                status_code=400,
+                detail="No Stripe customer found.",
+            )
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=recruiter.stripe_customer_id,
+            return_url=FRONTEND_URL,
+        )
+
+        return {"portal_url": portal_session.url}
+
+    finally:
+        db.close()
 
 
 @router.post("/webhook")
@@ -160,54 +192,7 @@ async def stripe_webhook(request: Request):
 
                 db.commit()
 
-        return {
-            "status": "success",
-        }
-
-    finally:
-        db.close()
-
-@router.post("/create-customer-portal")
-def create_customer_portal():
-    db: Session = SessionLocal()
-
-    try:
-        recruiter = (
-            db.query(RecruiterUser)
-            .filter(RecruiterUser.id == 1)
-            .first()
-        )
-
-        if not recruiter:
-            raise HTTPException(
-                status_code=404,
-                detail="Recruiter not found.",
-            )
-
-        if not recruiter.stripe_customer_id:
-            raise HTTPException(
-                status_code=400,
-                detail="No Stripe customer found.",
-            )
-
-        portal_session = stripe.billing_portal.Session.create(
-            customer=recruiter.stripe_customer_id,
-            return_url=FRONTEND_URL,
-        )
-
-        return {
-            "portal_url": portal_session.url,
-        }
-
-    finally:
-        db.close()al_session.url,
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+        return {"status": "success"}
 
     finally:
         db.close()
