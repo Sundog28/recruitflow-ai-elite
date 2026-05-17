@@ -537,3 +537,47 @@ export default function RecruiterDashboard() {
     </div>
   );
 }
+
+export type CandidateComparisonItem = {
+  id: number;
+  candidate_name?: string | null;
+  resume_filename?: string | null;
+  fit_score: number;
+  status: string;
+  bookmarked: boolean;
+  matched_skills?: string | null;
+  missing_skills?: string | null;
+  recommendation?: string | null;
+  strengths?: string | null;
+  red_flags?: string | null;
+  semantic_similarity?: number | null;
+  ats_score?: number | null;
+  skill_score?: number | null;
+  experience_score?: number | null;
+  project_relevance_score?: number | null;
+  seniority_match_score?: number | null;
+};
+
+export type CandidateComparisonResponse = {
+  count: number;
+  top_candidate_id?: number | null;
+  ai_summary?: string | null;
+  candidates: CandidateComparisonItem[];
+};
+
+export async function compareCandidates(
+  candidateIds: number[]
+): Promise<CandidateComparisonResponse> {
+  const params = new URLSearchParams();
+
+  params.append("candidate_ids", candidateIds.join(","));
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/compare?${params.toString()}`
+  );
+
+  return parseJsonResponse<CandidateComparisonResponse>(
+    response,
+    "Failed to compare candidates."
+  );
+}
