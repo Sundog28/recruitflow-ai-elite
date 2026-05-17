@@ -165,14 +165,12 @@ async def stripe_webhook(request: Request):
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
 
-            customer_id = session.get("customer")
-            subscription_id = session.get("subscription")
+            customer_id = session["customer"]
+            subscription_id = session["subscription"]
 
-            recruiter_id = session.get("client_reference_id")
+            recruiter_id = session["client_reference_id"]
 
-            customer_email = (
-                session.get("customer_details", {}) or {}
-            ).get("email")
+            customer_email = session["customer_details"]["email"]
 
             recruiter = None
 
@@ -208,7 +206,7 @@ async def stripe_webhook(request: Request):
 
         elif event["type"] == "customer.subscription.deleted":
             subscription = event["data"]["object"]
-            subscription_id = subscription.get("id")
+            subscription_id = subscription["id"]
 
             recruiter = (
                 db.query(RecruiterUser)
