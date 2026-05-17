@@ -38,7 +38,6 @@ type DashboardData = {
   total_candidates: number;
   bookmarked_candidates: number;
   average_fit_score: number;
-
   pipeline: {
     screening: number;
     interview: number;
@@ -46,7 +45,6 @@ type DashboardData = {
     hired: number;
     rejected: number;
   };
-
   recent_candidates: Candidate[];
 };
 
@@ -58,69 +56,42 @@ const QUICK_QUESTIONS = [
   "Would you hire this candidate?",
 ];
 
-const PIE_COLORS = [
-  "#34d399",
-  "#60a5fa",
-  "#f59e0b",
-  "#f472b6",
-  "#a78bfa",
-];
+const PIE_COLORS = ["#34d399", "#60a5fa", "#f59e0b", "#f472b6", "#a78bfa"];
 
 export default function RecruiterDashboard() {
-  const [dashboard, setDashboard] =
-    useState<DashboardData | null>(null);
-
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [selectedCandidateId, setSelectedCandidateId] =
     useState<number | null>(null);
 
-  const [copilotQuestion, setCopilotQuestion] =
-    useState(
-      "Should I interview this candidate?"
-    );
+  const [copilotQuestion, setCopilotQuestion] = useState(
+    "Should I interview this candidate?"
+  );
+  const [copilotAnswer, setCopilotAnswer] = useState("");
+  const [copilotLoading, setCopilotLoading] = useState(false);
 
-  const [copilotAnswer, setCopilotAnswer] =
-    useState("");
+  const [semanticQuery, setSemanticQuery] = useState("");
+  const [semanticResults, setSemanticResults] = useState<any[]>([]);
+  const [semanticLoading, setSemanticLoading] = useState(false);
 
-  const [copilotLoading, setCopilotLoading] =
-    useState(false);
+  const [comparisonIds, setComparisonIds] = useState<number[]>([]);
+  const [comparisonResults, setComparisonResults] = useState<any[]>([]);
+  const [comparisonSummary, setComparisonSummary] = useState("");
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
-  const [semanticQuery, setSemanticQuery] =
-    useState("");
-
-  const [semanticResults, setSemanticResults] =
-    useState<any[]>([]);
-
-  const [semanticLoading, setSemanticLoading] =
-    useState(false);
-
-  const [comparisonIds, setComparisonIds] =
-    useState<number[]>([]);
-
-  const [comparisonResults, setComparisonResults] =
-    useState<any[]>([]);
-
-  const [comparisonSummary, setComparisonSummary] =
-    useState("");
-
-  const [comparisonLoading, setComparisonLoading] =
-    useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
+  const [minScore, setMinScore] = useState(0);
+  const [sortBy, setSortBy] = useState("newest");
 
   async function loadDashboard() {
     try {
-      const data =
-        await getRecruiterDashboard();
-
+      const data = await getRecruiterDashboard();
       setDashboard(data);
 
-      if (
-        data.recent_candidates?.length &&
-        selectedCandidateId === null
-      ) {
-        setSelectedCandidateId(
-          data.recent_candidates[0].id
-        );
+      if (data.recent_candidates?.length && selectedCandidateId === null) {
+        setSelectedCandidateId(data.recent_candidates[0].id);
       }
     } catch (error) {
       console.error(error);
@@ -133,57 +104,104 @@ export default function RecruiterDashboard() {
     loadDashboard();
   }, []);
 
-  async function handleAskCopilot(
-    question?: string
-  ) {
-    const finalQuestion =
-      question || copilotQuestion;
+  const filteredCandidates = useMemo(() => {
+    if (!dashboard) return [];
 
-    if (
-      !selectedCandidateId ||
-      !finalQuestion.trim()
-    ) {
-      return;
+    let candidates = [...dashboard.recent_candidates];
+
+    if (statusFilter !== "all") {
+      candidates = candidates.filter(
+        (candidate) => candidate.status === statusFilter
+      );
     }
+
+    if (bookmarkedOnly) {
+      candidates = candidates.filter((candidate) => candidate.bookmarked);
+    }
+
+    candidates = candidates.filter(
+      (candidate) => Number(candidate.fit_score || 0) >= minScore
+    );
+
+    if (sortBy === "highest_score") {
+      candidates.sort((a, b) => b.fit_score - a.fit_score);
+    }
+
+    if (sortBy === "lowest_score") {
+      candidates.sort((a, b) => a.fit_score - b.fit_score);
+    }
+
+    if (sortBy === "newest") {
+      candidates.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
+      );
+    }
+
+    if (sortBy === "oldest") {
+      candidates.sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() -
+          new Date(b.created_at).getTime()
+      );
+    }
+
+    if (sortBy === "status") {
+      candidates.sort((a, b) => a.status.localeCompare(b.status));
+    }
+
+    return candidates;
+  }, [dashboard, statusFilter, bookmarkedOnly, minScore, sortBy]);
+
+  const pipelineChartData = useMemo(() => {
+    if (!dashboard) return [];
+
+    return Object.entries(dashboard.pipeline).map(([status, value]) => ({
+      status,
+      candidates: value,
+    }));
+  }, [dashboard]);
+
+  const fitScoreData = useMemo(() => {
+    if (!dashboard) return [];
+
+    return dashboard.recent_candidates.map((candidate) => ({
+      name: candidate.candidate_name || `Candidate ${candidate.id}`,
+      score: candidate.fit_score,
+    }));
+  }, [dashboard]);
+
+  async function handleAskCopilot(question?: string) {
+    const finalQuestion = question || copilotQuestion;
+
+    if (!selectedCandidateId || !finalQuestion.trim()) return;
 
     try {
       setCopilotLoading(true);
 
-      const response =
-        await askCopilotQuestion(
-          selectedCandidateId,
-          finalQuestion
-        );
+      const response = await askCopilotQuestion(
+        selectedCandidateId,
+        finalQuestion
+      );
 
       setCopilotQuestion(finalQuestion);
       setCopilotAnswer(response.answer);
     } catch (error) {
       console.error(error);
-
-      setCopilotAnswer(
-        "Copilot failed to generate a response."
-      );
+      setCopilotAnswer("Copilot failed to generate a response.");
     } finally {
       setCopilotLoading(false);
     }
   }
 
   async function handleSemanticSearch() {
-    if (!semanticQuery.trim()) {
-      return;
-    }
+    if (!semanticQuery.trim()) return;
 
     try {
       setSemanticLoading(true);
-
-      const response =
-        await semanticSearchCandidates(
-          semanticQuery
-        );
-
-      setSemanticResults(
-        response.results || []
-      );
+      const response = await semanticSearchCandidates(semanticQuery);
+      setSemanticResults(response.results || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -193,74 +211,32 @@ export default function RecruiterDashboard() {
 
   async function handleCompareCandidates() {
     if (comparisonIds.length < 2) {
-      alert(
-        "Select at least 2 candidates."
-      );
-
+      alert("Select at least 2 candidates.");
       return;
     }
 
     try {
       setComparisonLoading(true);
 
-      const response =
-        await compareCandidates(
-          comparisonIds
-        );
+      const response = await compareCandidates(comparisonIds);
 
-      setComparisonResults(
-        response.candidates || []
-      );
-
-      setComparisonSummary(
-        response.ai_summary || ""
-      );
+      setComparisonResults(response.candidates || []);
+      setComparisonSummary(response.ai_summary || "");
     } catch (error) {
       console.error(error);
-
-      alert(
-        "Failed to compare candidates."
-      );
+      alert("Failed to compare candidates.");
     } finally {
       setComparisonLoading(false);
     }
   }
 
-  function toggleComparisonCandidate(
-    candidateId: number
-  ) {
+  function toggleComparisonCandidate(candidateId: number) {
     setComparisonIds((prev) =>
       prev.includes(candidateId)
-        ? prev.filter(
-            (id) => id !== candidateId
-          )
+        ? prev.filter((id) => id !== candidateId)
         : [...prev, candidateId]
     );
   }
-
-  const pipelineChartData = useMemo(() => {
-    if (!dashboard) return [];
-
-    return Object.entries(
-      dashboard.pipeline
-    ).map(([status, value]) => ({
-      status,
-      candidates: value,
-    }));
-  }, [dashboard]);
-
-  const fitScoreData = useMemo(() => {
-    if (!dashboard) return [];
-
-    return dashboard.recent_candidates.map(
-      (candidate) => ({
-        name:
-          candidate.candidate_name ||
-          `Candidate ${candidate.id}`,
-        score: candidate.fit_score,
-      })
-    );
-  }, [dashboard]);
 
   if (loading) {
     return (
@@ -270,55 +246,37 @@ export default function RecruiterDashboard() {
     );
   }
 
-  if (!dashboard) {
-    return null;
-  }
+  if (!dashboard) return null;
 
   const selectedCandidate =
     dashboard.recent_candidates.find(
-      (candidate) =>
-        candidate.id ===
-        selectedCandidateId
-    ) ||
-    dashboard.recent_candidates[0];
+      (candidate) => candidate.id === selectedCandidateId
+    ) || dashboard.recent_candidates[0];
 
   return (
     <div className="space-y-10">
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white">
-        <h2 className="mb-6 text-3xl font-bold">
-          Recruiter Workspace
-        </h2>
+        <h2 className="mb-6 text-3xl font-bold">Recruiter Workspace</h2>
 
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-2xl bg-white/5 p-5">
-            <div className="text-sm text-slate-400">
-              Total Candidates
-            </div>
-
+            <div className="text-sm text-slate-400">Total Candidates</div>
             <div className="mt-2 text-4xl font-bold">
               {dashboard.total_candidates}
             </div>
           </div>
 
           <div className="rounded-2xl bg-white/5 p-5">
-            <div className="text-sm text-slate-400">
-              Average Fit Score
-            </div>
-
+            <div className="text-sm text-slate-400">Average Fit Score</div>
             <div className="mt-2 text-4xl font-bold">
               {dashboard.average_fit_score}%
             </div>
           </div>
 
           <div className="rounded-2xl bg-white/5 p-5">
-            <div className="text-sm text-slate-400">
-              Bookmarked Candidates
-            </div>
-
+            <div className="text-sm text-slate-400">Bookmarked Candidates</div>
             <div className="mt-2 text-4xl font-bold">
-              {
-                dashboard.bookmarked_candidates
-              }
+              {dashboard.bookmarked_candidates}
             </div>
           </div>
         </div>
@@ -329,7 +287,6 @@ export default function RecruiterDashboard() {
               <div className="text-sm uppercase tracking-[0.25em] text-emerald-300">
                 Hiring Funnel
               </div>
-
               <div className="mt-1 text-xl font-bold text-white">
                 Pipeline Distribution
               </div>
@@ -339,13 +296,9 @@ export default function RecruiterDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={pipelineChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-
                   <XAxis dataKey="status" stroke="#cbd5e1" />
-
                   <YAxis stroke="#cbd5e1" />
-
                   <Tooltip />
-
                   <Bar
                     dataKey="candidates"
                     radius={[10, 10, 0, 0]}
@@ -361,7 +314,6 @@ export default function RecruiterDashboard() {
               <div className="text-sm uppercase tracking-[0.25em] text-cyan-300">
                 Candidate Quality
               </div>
-
               <div className="mt-1 text-xl font-bold text-white">
                 Fit Score Distribution
               </div>
@@ -377,19 +329,12 @@ export default function RecruiterDashboard() {
                     outerRadius={120}
                     label
                   >
-                    {fitScoreData.map(
-                      (_, index) => (
-                        <Cell
-                          key={index}
-                          fill={
-                            PIE_COLORS[
-                              index %
-                                PIE_COLORS.length
-                            ]
-                          }
-                        />
-                      )
-                    )}
+                    {fitScoreData.map((_, index) => (
+                      <Cell
+                        key={index}
+                        fill={PIE_COLORS[index % PIE_COLORS.length]}
+                      />
+                    ))}
                   </Pie>
 
                   <Tooltip />
@@ -397,6 +342,99 @@ export default function RecruiterDashboard() {
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-blue-400/20 bg-blue-500/10 p-6">
+        <p className="text-sm uppercase tracking-[0.3em] text-blue-300">
+          Filtering + Sorting
+        </p>
+
+        <h3 className="mt-2 text-2xl font-bold text-white">
+          Recruiter Candidate Controls
+        </h3>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-4">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+          >
+            <option value="all">All Statuses</option>
+            <option value="screening">Screening</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="hired">Hired</option>
+            <option value="rejected">Rejected</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="highest_score">Highest Fit Score</option>
+            <option value="lowest_score">Lowest Fit Score</option>
+            <option value="status">Status</option>
+          </select>
+
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={minScore}
+            onChange={(e) => setMinScore(Number(e.target.value))}
+            placeholder="Minimum score"
+            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+          />
+
+          <button
+            type="button"
+            onClick={() => setBookmarkedOnly((prev) => !prev)}
+            className={`rounded-2xl border px-4 py-3 font-semibold transition ${
+              bookmarkedOnly
+                ? "border-yellow-300 bg-yellow-400/20 text-yellow-200"
+                : "border-white/10 bg-black/40 text-white"
+            }`}
+          >
+            {bookmarkedOnly ? "Bookmarked Only" : "All Candidates"}
+          </button>
+        </div>
+
+        <div className="mt-5 text-sm text-slate-300">
+          Showing {filteredCandidates.length} of{" "}
+          {dashboard.recent_candidates.length} candidates
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {filteredCandidates.map((candidate) => (
+            <div
+              key={candidate.id}
+              className="rounded-2xl border border-white/10 bg-black/20 p-4"
+            >
+              <div className="font-bold text-white">
+                {candidate.candidate_name || "Unknown Candidate"}
+              </div>
+
+              <div className="mt-1 text-sm text-slate-400">
+                {candidate.resume_filename}
+              </div>
+
+              <div className="mt-3 text-2xl font-black text-blue-300">
+                {candidate.fit_score}%
+              </div>
+
+              <div className="mt-1 text-sm capitalize text-slate-300">
+                {candidate.status}
+              </div>
+
+              {candidate.bookmarked ? (
+                <div className="mt-2 text-yellow-300">★ Bookmarked</div>
+              ) : null}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -419,71 +457,49 @@ export default function RecruiterDashboard() {
           <input
             type="text"
             value={semanticQuery}
-            onChange={(e) =>
-              setSemanticQuery(
-                e.target.value
-              )
-            }
+            onChange={(e) => setSemanticQuery(e.target.value)}
             placeholder="Search candidates..."
-            className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none"
+            className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
           />
 
           <button
             type="button"
-            onClick={
-              handleSemanticSearch
-            }
+            onClick={handleSemanticSearch}
             disabled={semanticLoading}
             className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-black"
           >
-            {semanticLoading
-              ? "Searching..."
-              : "Search"}
+            {semanticLoading ? "Searching..." : "Search"}
           </button>
         </div>
 
         {semanticResults.length > 0 ? (
           <div className="mt-6 space-y-4">
-            {semanticResults.map(
-              (result) => (
-                <div
-                  key={
-                    result.candidate.id
-                  }
-                  className="rounded-2xl border border-white/10 bg-black/20 p-5"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xl font-bold text-white">
-                        {
-                          result.candidate
-                            .candidate_name
-                        }
-                      </div>
-
-                      <div className="mt-1 text-sm text-slate-400">
-                        {
-                          result.candidate
-                            .resume_filename
-                        }
-                      </div>
+            {semanticResults.map((result) => (
+              <div
+                key={result.candidate.id}
+                className="rounded-2xl border border-white/10 bg-black/20 p-5"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-xl font-bold text-white">
+                      {result.candidate.candidate_name}
                     </div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {result.candidate.resume_filename}
+                    </div>
+                  </div>
 
-                    <div className="text-right">
-                      <div className="text-sm text-slate-400">
-                        Semantic Match
-                      </div>
-
-                      <div className="text-3xl font-black text-emerald-400">
-                        {
-                          result.semantic_score
-                        }
-                      </div>
+                  <div className="text-right">
+                    <div className="text-sm text-slate-400">
+                      Semantic Match
+                    </div>
+                    <div className="text-3xl font-black text-emerald-400">
+                      {result.semantic_score}
                     </div>
                   </div>
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </div>
         ) : null}
       </div>
@@ -500,50 +516,35 @@ export default function RecruiterDashboard() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {dashboard.recent_candidates.map(
-            (candidate) => (
-              <button
-                key={candidate.id}
-                type="button"
-                onClick={() =>
-                  toggleComparisonCandidate(
-                    candidate.id
-                  )
-                }
-                className={`rounded-2xl border p-4 text-left transition ${
-                  comparisonIds.includes(
-                    candidate.id
-                  )
-                    ? "border-cyan-300 bg-cyan-500/20"
-                    : "border-white/10 bg-black/20"
-                }`}
-              >
-                <div className="font-bold text-white">
-                  {candidate.candidate_name}
-                </div>
+          {filteredCandidates.map((candidate) => (
+            <button
+              key={candidate.id}
+              type="button"
+              onClick={() => toggleComparisonCandidate(candidate.id)}
+              className={`rounded-2xl border p-4 text-left transition ${
+                comparisonIds.includes(candidate.id)
+                  ? "border-cyan-300 bg-cyan-500/20"
+                  : "border-white/10 bg-black/20"
+              }`}
+            >
+              <div className="font-bold text-white">
+                {candidate.candidate_name}
+              </div>
 
-                <div className="mt-2 text-2xl font-black text-cyan-300">
-                  {
-                    candidate.fit_score
-                  }
-                  %
-                </div>
-              </button>
-            )
-          )}
+              <div className="mt-2 text-2xl font-black text-cyan-300">
+                {candidate.fit_score}%
+              </div>
+            </button>
+          ))}
         </div>
 
         <button
           type="button"
-          onClick={
-            handleCompareCandidates
-          }
+          onClick={handleCompareCandidates}
           disabled={comparisonLoading}
           className="mt-5 rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-black"
         >
-          {comparisonLoading
-            ? "Comparing..."
-            : "Compare Candidates"}
+          {comparisonLoading ? "Comparing..." : "Compare Candidates"}
         </button>
 
         {comparisonSummary ? (
@@ -567,48 +568,25 @@ export default function RecruiterDashboard() {
         <div className="grid gap-5 lg:grid-cols-[1fr_1.3fr]">
           <div>
             <select
-              value={
-                selectedCandidate?.id ||
-                ""
-              }
-              onChange={(e) =>
-                setSelectedCandidateId(
-                  Number(
-                    e.target.value
-                  )
-                )
-              }
+              value={selectedCandidate?.id || ""}
+              onChange={(e) => setSelectedCandidateId(Number(e.target.value))}
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white"
             >
-              {dashboard.recent_candidates.map(
-                (candidate) => (
-                  <option
-                    key={candidate.id}
-                    value={
-                      candidate.id
-                    }
-                  >
-                    {
-                      candidate.candidate_name
-                    }
-                  </option>
-                )
-              )}
+              {filteredCandidates.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.candidate_name}
+                </option>
+              ))}
             </select>
 
             {selectedCandidate ? (
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
                 <div className="text-lg font-semibold text-white">
-                  {
-                    selectedCandidate.candidate_name
-                  }
+                  {selectedCandidate.candidate_name}
                 </div>
 
                 <div className="mt-3 text-3xl font-bold text-emerald-400">
-                  {
-                    selectedCandidate.fit_score
-                  }
-                  %
+                  {selectedCandidate.fit_score}%
                 </div>
               </div>
             ) : null}
@@ -617,44 +595,30 @@ export default function RecruiterDashboard() {
           <div>
             <textarea
               value={copilotQuestion}
-              onChange={(e) =>
-                setCopilotQuestion(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setCopilotQuestion(e.target.value)}
               className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
             />
 
             <div className="mt-3 flex flex-wrap gap-2">
-              {QUICK_QUESTIONS.map(
-                (question) => (
-                  <button
-                    key={question}
-                    type="button"
-                    onClick={() =>
-                      handleAskCopilot(
-                        question
-                      )
-                    }
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200"
-                  >
-                    {question}
-                  </button>
-                )
-              )}
+              {QUICK_QUESTIONS.map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  onClick={() => handleAskCopilot(question)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200"
+                >
+                  {question}
+                </button>
+              ))}
             </div>
 
             <button
               type="button"
-              onClick={() =>
-                handleAskCopilot()
-              }
+              onClick={() => handleAskCopilot()}
               disabled={copilotLoading}
               className="mt-4 rounded-2xl bg-violet-500 px-5 py-3 font-semibold text-white"
             >
-              {copilotLoading
-                ? "Thinking..."
-                : "Ask Copilot"}
+              {copilotLoading ? "Thinking..." : "Ask Copilot"}
             </button>
 
             {copilotAnswer ? (
