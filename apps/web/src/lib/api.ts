@@ -124,6 +124,17 @@ export type RecruiterAccountStatus = {
   analyses_used: number;
 };
 
+export type SemanticSearchResult = {
+  semantic_score: number;
+  candidate: RecruiterDashboardCandidate;
+};
+
+export type SemanticSearchResponse = {
+  query: string;
+  count: number;
+  results: SemanticSearchResult[];
+};
+
 async function parseJsonResponse<T>(
   response: Response,
   fallbackMessage: string
@@ -389,5 +400,22 @@ export async function askCopilotQuestion(
   return parseJsonResponse<CopilotChatResponse>(
     response,
     "Copilot request failed."
+  );
+}
+
+export async function semanticSearchCandidates(
+  query: string
+): Promise<SemanticSearchResponse> {
+  const params = new URLSearchParams();
+
+  params.append("query", query);
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/recruiter/semantic-search?${params.toString()}`
+  );
+
+  return parseJsonResponse<SemanticSearchResponse>(
+    response,
+    "Failed to run semantic candidate search."
   );
 }
