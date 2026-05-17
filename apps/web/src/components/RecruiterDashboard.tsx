@@ -1,4 +1,5 @@
 import RecruiterKanbanBoard from "./RecruiterKanbanBoard";
+import RecruiterEnterpriseTools from "./RecruiterEnterpriseTools";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -745,6 +746,7 @@ export default function RecruiterDashboard() {
       </div>
 
       <RecruiterKanbanBoard />
+      <RecruiterEnterpriseTools candidates={filteredCandidates} />
 
       <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
         <div className="mb-5">
