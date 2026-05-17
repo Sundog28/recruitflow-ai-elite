@@ -579,13 +579,43 @@ ${result.score_explanation?.join("\n") || "N/A"}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
-        >
-          Logout
-        </button>
+        <div className="flex gap-3">
+  <button
+    type="button"
+    onClick={async () => {
+      try {
+        const response = await fetch(
+          "https://recruitflow-ai-elite-api.onrender.com/api/v1/billing/create-customer-portal",
+          {
+            method: "POST",
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.portal_url) {
+          window.location.href = data.portal_url;
+        } else {
+          alert("No billing portal found.");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Failed to open billing portal.");
+      }
+    }}
+    className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-3 font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
+  >
+    Manage Billing
+  </button>
+
+  <button
+    type="button"
+    onClick={handleLogout}
+    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+  >
+    Logout
+  </button>
+</div>
       </div>
     </section>
 
