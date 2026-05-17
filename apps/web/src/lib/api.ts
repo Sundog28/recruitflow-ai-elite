@@ -100,6 +100,18 @@ export type RewriteResponse = {
   rewritten_resume: string;
 };
 
+export type CopilotChatResponse = {
+  candidate_id: number;
+  question: string;
+  answer: string;
+  candidate: {
+    id: number;
+    candidate_name?: string | null;
+    fit_score: number;
+    predicted_label: string;
+  };
+};
+
 export type RecruiterAccountStatus = {
   id: number;
   email: string;
@@ -355,5 +367,27 @@ export async function getRecruiterAccountStatus(
   return parseJsonResponse<RecruiterAccountStatus>(
     response,
     "Failed to fetch recruiter account status."
+  );
+}
+
+export async function askCopilotQuestion(
+  candidateId: number,
+  question: string
+): Promise<CopilotChatResponse> {
+  const formData = new FormData();
+
+  formData.append("question", question);
+
+  const response = await fetch(
+    `${API_BASE}/api/v1/copilot/candidate/${candidateId}/chat`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  return parseJsonResponse<CopilotChatResponse>(
+    response,
+    "Copilot request failed."
   );
 }
