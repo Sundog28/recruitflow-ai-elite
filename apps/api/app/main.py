@@ -1,7 +1,8 @@
 from sqlalchemy import text
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes.billing import router as billing_router
+
 from app.db.database import Base
 from app.db.database import engine
 from app.db import models
@@ -12,6 +13,9 @@ from app.routes.auth import router as auth_router
 from app.routes.recruiter import router as recruiter_router
 from app.routes.team import router as team_router
 from app.routes.copilot import router as copilot_router
+from app.routes.billing import router as billing_router
+from app.routes.ai_summary import router as ai_summary_router
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,8 +35,6 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
-        "ALTER TABLE recruiter_users ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
-        "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN analyses_used INTEGER DEFAULT 0",
     ]
 
@@ -49,10 +51,12 @@ def run_startup_migrations():
 
 run_startup_migrations()
 
+
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.6.0",
+    version="2.7.0",
 )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,6 +66,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
 app.include_router(auth_router)
@@ -69,6 +74,8 @@ app.include_router(recruiter_router)
 app.include_router(team_router)
 app.include_router(copilot_router)
 app.include_router(billing_router)
+app.include_router(ai_summary_router)
+
 
 @app.get("/")
 def root():
@@ -82,5 +89,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.6.0",
+        "version": "2.7.0",
     }
