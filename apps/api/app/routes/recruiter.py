@@ -325,3 +325,87 @@ def semantic_candidate_search(
 
     finally:
         db.close()
+
+    @router.get("/compare")
+def compare_candidates(
+    candidate_ids: str,
+):
+    db: Session = SessionLocal()
+
+    try:
+        parsed_ids = []
+
+        for raw_id in candidate_ids.split(","):
+            raw_id = raw_id.strip()
+
+            if raw_id.isdigit():
+                parsed_ids.append(int(raw_id))
+
+        if len(parsed_ids) < 2:
+            raise HTTPException(
+                status_code=400,
+                detail="At least 2 candidate IDs required.",
+            )
+
+        analyses = (
+            db.query(AnalysisRecord)
+            .filter(AnalysisRecord.id.in_(parsed_ids))
+            .all()
+        )
+
+        comparison_results = []
+
+        top_candidate = None
+        top_score = -1
+
+        for analysis in analyses:
+            candidate_payload = {
+                "id": analysis.id,
+                "candidate_name": analysis.candidate_name,
+                "resume_filename": analysis.resume_filename,
+                "fit_score": analysis.fit_score,
+                "status": analysis.candidate_status or "screening",
+                "bookmarked": bool(analysis.bookmarked),
+                "matched_skills": analysis.matched_skills,
+                "missing_skills": analysis.missing_skills,
+                "recommendation": analysis.hiring_recommendation,
+                "strengths": analysis.strengths,
+                "red_flags": analysis.red_flags,
+                "semantic_similarity": analysis.semantic_similarity,
+                "ats_score": analysis.ats_score,
+                "skill_score": analysis.skill_score,
+                "experience_score": analysis.experience_score,
+                "project_relevance_score": analysis.project_relevance_score,
+                "seniority_match_score": analysis.seniority_match_score,
+            }
+
+            comparison_results.append(candidate_payload)
+
+            score = float(analysis.fit_score or 0)
+
+            if score > top_score:
+                top_score = score
+                top_candidate = analysis
+
+        ai_summary = None
+
+        if top_candidate:
+            ai_summary = (
+                f"{top_candidate.candidate_name or 'This candidate'} "
+                f"currently appears strongest overall with a fit score of "
+                f"{top_candidate.fit_score}. "
+                f"Their recommendation is: "
+                f"{top_candidate.hiring_recommendation or 'No recommendation available'}."
+            )
+
+        return {
+            "count": len(comparison_results),
+            "top_candidate_id": (
+                top_candidate.id if top_candidate else None
+            ),
+            "ai_summary": ai_summary,
+            "candidates": comparison_results,
+        }
+
+    finally:
+        db.close()
