@@ -1,16 +1,19 @@
 from fastapi import APIRouter
 from fastapi import Form
 from fastapi import HTTPException
+
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
 from app.db.models import AnalysisRecord
 
+
 router = APIRouter(
     prefix="/api/v1/recruiter",
     tags=["recruiter"],
 )
+
 
 VALID_STATUSES = {
     "screening",
@@ -49,12 +52,17 @@ def recruiter_dashboard():
         )
 
         total_candidates = len(analyses)
-        bookmarked_candidates = len([a for a in analyses if a.bookmarked])
+
+        bookmarked_candidates = len(
+            [a for a in analyses if a.bookmarked]
+        )
 
         average_fit_score = 0
+
         if analyses:
             average_fit_score = round(
-                sum(a.fit_score for a in analyses) / len(analyses),
+                sum(a.fit_score for a in analyses)
+                / len(analyses),
                 2,
             )
 
@@ -69,13 +77,19 @@ def recruiter_dashboard():
         recent_candidates = []
 
         for analysis in analyses:
-            status = analysis.candidate_status or "screening"
+            status = (
+                analysis.candidate_status
+                or "screening"
+            )
 
             if status not in pipeline:
                 pipeline[status] = 0
 
             pipeline[status] += 1
-            recent_candidates.append(serialize_candidate(analysis))
+
+            recent_candidates.append(
+                serialize_candidate(analysis)
+            )
 
         return {
             "total_candidates": total_candidates,
@@ -101,23 +115,37 @@ def recruiter_search(
         query = db.query(AnalysisRecord)
 
         if status:
-            query = query.filter(AnalysisRecord.candidate_status == status)
+            query = query.filter(
+                AnalysisRecord.candidate_status
+                == status
+            )
 
         if min_score is not None:
-            query = query.filter(AnalysisRecord.fit_score >= min_score)
+            query = query.filter(
+                AnalysisRecord.fit_score
+                >= min_score
+            )
 
         if bookmarked is not None:
-            query = query.filter(AnalysisRecord.bookmarked == bookmarked)
+            query = query.filter(
+                AnalysisRecord.bookmarked
+                == bookmarked
+            )
 
         results = (
-            query.order_by(desc(AnalysisRecord.created_at))
+            query.order_by(
+                desc(AnalysisRecord.created_at)
+            )
             .limit(100)
             .all()
         )
 
         return {
             "count": len(results),
-            "results": [serialize_candidate(r) for r in results],
+            "results": [
+                serialize_candidate(r)
+                for r in results
+            ],
         }
 
     finally:
@@ -140,7 +168,9 @@ def update_candidate_status(
     try:
         analysis = (
             db.query(AnalysisRecord)
-            .filter(AnalysisRecord.id == candidate_id)
+            .filter(
+                AnalysisRecord.id == candidate_id
+            )
             .first()
         )
 
@@ -157,7 +187,9 @@ def update_candidate_status(
 
         return {
             "message": "Candidate status updated.",
-            "candidate": serialize_candidate(analysis),
+            "candidate": serialize_candidate(
+                analysis
+            ),
         }
 
     finally:
@@ -165,13 +197,17 @@ def update_candidate_status(
 
 
 @router.patch("/candidates/{candidate_id}/bookmark")
-def toggle_candidate_bookmark(candidate_id: int):
+def toggle_candidate_bookmark(
+    candidate_id: int,
+):
     db: Session = SessionLocal()
 
     try:
         analysis = (
             db.query(AnalysisRecord)
-            .filter(AnalysisRecord.id == candidate_id)
+            .filter(
+                AnalysisRecord.id == candidate_id
+            )
             .first()
         )
 
@@ -181,14 +217,18 @@ def toggle_candidate_bookmark(candidate_id: int):
                 detail="Candidate not found.",
             )
 
-        analysis.bookmarked = not bool(analysis.bookmarked)
+        analysis.bookmarked = not bool(
+            analysis.bookmarked
+        )
 
         db.commit()
         db.refresh(analysis)
 
         return {
             "message": "Candidate bookmark updated.",
-            "candidate": serialize_candidate(analysis),
+            "candidate": serialize_candidate(
+                analysis
+            ),
         }
 
     finally:
@@ -205,7 +245,9 @@ def update_candidate_notes(
     try:
         analysis = (
             db.query(AnalysisRecord)
-            .filter(AnalysisRecord.id == candidate_id)
+            .filter(
+                AnalysisRecord.id == candidate_id
+            )
             .first()
         )
 
@@ -222,7 +264,9 @@ def update_candidate_notes(
 
         return {
             "message": "Recruiter notes updated.",
-            "candidate": serialize_candidate(analysis),
+            "candidate": serialize_candidate(
+                analysis
+            ),
         }
 
     finally:
@@ -239,7 +283,9 @@ def update_candidate_tags(
     try:
         analysis = (
             db.query(AnalysisRecord)
-            .filter(AnalysisRecord.id == candidate_id)
+            .filter(
+                AnalysisRecord.id == candidate_id
+            )
             .first()
         )
 
@@ -256,11 +302,14 @@ def update_candidate_tags(
 
         return {
             "message": "Candidate tags updated.",
-            "candidate": serialize_candidate(analysis),
+            "candidate": serialize_candidate(
+                analysis
+            ),
         }
 
     finally:
         db.close()
+
 
 @router.get("/semantic-search")
 def semantic_candidate_search(
@@ -271,7 +320,9 @@ def semantic_candidate_search(
     try:
         analyses = (
             db.query(AnalysisRecord)
-            .order_by(desc(AnalysisRecord.fit_score))
+            .order_by(
+                desc(AnalysisRecord.fit_score)
+            )
             .limit(100)
             .all()
         )
@@ -302,18 +353,30 @@ def semantic_candidate_search(
                 if term in searchable_text:
                     score += 1
 
-            score += float(analysis.fit_score or 0) / 100
+            score += (
+                float(analysis.fit_score or 0)
+                / 100
+            )
 
             if score > 0:
                 scored_results.append(
                     {
-                        "semantic_score": round(score, 2),
-                        "candidate": serialize_candidate(analysis),
+                        "semantic_score": round(
+                            score,
+                            2,
+                        ),
+                        "candidate": (
+                            serialize_candidate(
+                                analysis
+                            )
+                        ),
                     }
                 )
 
         scored_results.sort(
-            key=lambda item: item["semantic_score"],
+            key=lambda item: (
+                item["semantic_score"]
+            ),
             reverse=True,
         )
 
@@ -326,7 +389,8 @@ def semantic_candidate_search(
     finally:
         db.close()
 
-    @router.get("/compare")
+
+@router.get("/compare")
 def compare_candidates(
     candidate_ids: str,
 ):
@@ -349,7 +413,11 @@ def compare_candidates(
 
         analyses = (
             db.query(AnalysisRecord)
-            .filter(AnalysisRecord.id.in_(parsed_ids))
+            .filter(
+                AnalysisRecord.id.in_(
+                    parsed_ids
+                )
+            )
             .all()
         )
 
@@ -361,27 +429,60 @@ def compare_candidates(
         for analysis in analyses:
             candidate_payload = {
                 "id": analysis.id,
-                "candidate_name": analysis.candidate_name,
-                "resume_filename": analysis.resume_filename,
+                "candidate_name": (
+                    analysis.candidate_name
+                ),
+                "resume_filename": (
+                    analysis.resume_filename
+                ),
                 "fit_score": analysis.fit_score,
-                "status": analysis.candidate_status or "screening",
-                "bookmarked": bool(analysis.bookmarked),
-                "matched_skills": analysis.matched_skills,
-                "missing_skills": analysis.missing_skills,
-                "recommendation": analysis.hiring_recommendation,
+                "status": (
+                    analysis.candidate_status
+                    or "screening"
+                ),
+                "bookmarked": bool(
+                    analysis.bookmarked
+                ),
+                "matched_skills": (
+                    analysis.matched_skills
+                ),
+                "missing_skills": (
+                    analysis.missing_skills
+                ),
+                "recommendation": (
+                    analysis.hiring_recommendation
+                ),
                 "strengths": analysis.strengths,
-                "red_flags": analysis.red_flags,
-                "semantic_similarity": analysis.semantic_similarity,
-                "ats_score": analysis.ats_score,
-                "skill_score": analysis.skill_score,
-                "experience_score": analysis.experience_score,
-                "project_relevance_score": analysis.project_relevance_score,
-                "seniority_match_score": analysis.seniority_match_score,
+                "red_flags": (
+                    analysis.red_flags
+                ),
+                "semantic_similarity": (
+                    analysis.semantic_similarity
+                ),
+                "ats_score": (
+                    analysis.ats_score
+                ),
+                "skill_score": (
+                    analysis.skill_score
+                ),
+                "experience_score": (
+                    analysis.experience_score
+                ),
+                "project_relevance_score": (
+                    analysis.project_relevance_score
+                ),
+                "seniority_match_score": (
+                    analysis.seniority_match_score
+                ),
             }
 
-            comparison_results.append(candidate_payload)
+            comparison_results.append(
+                candidate_payload
+            )
 
-            score = float(analysis.fit_score or 0)
+            score = float(
+                analysis.fit_score or 0
+            )
 
             if score > top_score:
                 top_score = score
@@ -401,7 +502,9 @@ def compare_candidates(
         return {
             "count": len(comparison_results),
             "top_candidate_id": (
-                top_candidate.id if top_candidate else None
+                top_candidate.id
+                if top_candidate
+                else None
             ),
             "ai_summary": ai_summary,
             "candidates": comparison_results,
