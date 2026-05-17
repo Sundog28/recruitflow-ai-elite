@@ -8,6 +8,7 @@ import {
   toggleCandidateBookmark,
   updateCandidateStatus,
   updateCandidateNotes,
+  semanticSearchCandidates,
 } from "../lib/api";
 
 type Candidate = {
@@ -62,6 +63,15 @@ export default function RecruiterDashboard() {
 
   const [copilotLoading, setCopilotLoading] =
     useState(false);
+
+  const [semanticQuery, setSemanticQuery] =
+  useState("");
+
+  const [semanticResults, setSemanticResults] =
+  useState<any[]>([]);
+
+  const [semanticLoading, setSemanticLoading] =
+  useState(false);
 
   async function loadDashboard() {
     try {
@@ -143,6 +153,27 @@ export default function RecruiterDashboard() {
       );
     } finally {
       setCopilotLoading(false);
+    }
+  }
+
+  async function handleSemanticSearch() {
+    if (!semanticQuery.trim()) {
+      return;
+    }
+
+    try {
+      setSemanticLoading(true);
+
+      const response =
+        await semanticSearchCandidates(
+          semanticQuery
+        );
+
+      setSemanticResults(response.results || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSemanticLoading(false);
     }
   }
 
