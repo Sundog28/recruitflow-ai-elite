@@ -261,3 +261,67 @@ def update_candidate_tags(
 
     finally:
         db.close()
+
+@router.get("/semantic-search")
+def semantic_candidate_search(
+    query: str,
+):
+    db: Session = SessionLocal()
+
+    try:
+        analyses = (
+            db.query(AnalysisRecord)
+            .order_by(desc(AnalysisRecord.fit_score))
+            .limit(100)
+            .all()
+        )
+
+        query_lower = query.lower()
+
+        scored_results = []
+
+        for analysis in analyses:
+            searchable_text = " ".join(
+                [
+                    analysis.candidate_name or "",
+                    analysis.resume_filename or "",
+                    analysis.matched_skills or "",
+                    analysis.missing_skills or "",
+                    analysis.hiring_recommendation or "",
+                    analysis.predicted_label or "",
+                    analysis.recruiter_notes or "",
+                    analysis.candidate_tags or "",
+                ]
+            ).lower()
+
+            score = 0
+
+            query_terms = query_lower.split()
+
+            for term in query_terms:
+                if term in searchable_text:
+                    score += 1
+
+            score += float(analysis.fit_score or 0) / 100
+
+            if score > 0:
+                scored_results.append(
+                    {
+                        "semantic_score": round(score, 2),
+                        "candidate": serialize_candidate(analysis),
+                    }
+                )
+
+        scored_results.sort(
+            key=lambda item: item["semantic_score"],
+            reverse=True,
+        )
+
+        return {
+            "query": query,
+            "count": len(scored_results),
+            "results": scored_results[:25],
+        }
+
+    finally:
+        db.close()
