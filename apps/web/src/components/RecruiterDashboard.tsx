@@ -253,6 +253,168 @@ export default function RecruiterDashboard() {
         <RecruiterKanbanBoard />
       </div>
 
+      <div className="mb-10 rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
+  <div className="mb-5">
+    <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">
+      Semantic Talent Search
+    </p>
+
+    <h3 className="mt-2 text-2xl font-bold text-white">
+      Search Candidates Intelligently
+    </h3>
+
+    <p className="mt-2 text-slate-300">
+      Search candidates by skills, technologies,
+      recruiter intent, and AI relevance.
+    </p>
+  </div>
+
+  <div className="flex flex-col gap-3 md:flex-row">
+    <input
+      type="text"
+      value={semanticQuery}
+      onChange={(e) =>
+        setSemanticQuery(e.target.value)
+      }
+      placeholder="Search: python fastapi react ml"
+      className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-emerald-400/60"
+    />
+
+    <button
+      type="button"
+      onClick={handleSemanticSearch}
+      disabled={semanticLoading}
+      className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-black transition hover:bg-emerald-400 disabled:opacity-60"
+    >
+      {semanticLoading
+        ? "Searching..."
+        : "Search"}
+    </button>
+  </div>
+
+  {semanticResults.length > 0 ? (
+    <div className="mt-6 space-y-4">
+      {semanticResults.map((result) => (
+        <div
+          key={result.candidate.id}
+          className="rounded-2xl border border-white/10 bg-black/20 p-5"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xl font-bold text-white">
+                {result.candidate.candidate_name}
+              </div>
+
+              <div className="mt-1 text-sm text-slate-400">
+                {result.candidate.resume_filename}
+              </div>
+
+              <div className="mt-3 text-sm text-slate-300">
+                {result.candidate.recommendation}
+              </div>
+            </div>
+
+            <div className="text-right">
+              <div className="text-sm text-slate-400">
+                Semantic Match
+              </div>
+
+              <div className="text-3xl font-black text-emerald-400">
+                {result.semantic_score}
+              </div>
+
+              <div className="mt-2 text-sm text-slate-400">
+                ATS Score: {result.candidate.fit_score}%
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : null}
+</div>
+
+      <div className="mb-10 rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
+  <div className="mb-5">
+    <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">
+      Semantic Talent Search
+    </p>
+
+    <h3 className="mt-2 text-2xl font-bold text-white">
+      Search Candidates Intelligently
+    </h3>
+
+    <p className="mt-2 text-slate-300">
+      Find candidates by skills, technologies,
+      recruiter intent, or AI relevance.
+    </p>
+  </div>
+
+  <div className="flex flex-col gap-3 md:flex-row">
+    <input
+      type="text"
+      value={semanticQuery}
+      onChange={(e) =>
+        setSemanticQuery(e.target.value)
+      }
+      placeholder="Search: python fastapi react ml"
+      className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-emerald-400/60"
+    />
+
+    <button
+      type="button"
+      onClick={handleSemanticSearch}
+      disabled={semanticLoading}
+      className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-black transition hover:bg-emerald-400 disabled:opacity-60"
+    >
+      {semanticLoading
+        ? "Searching..."
+        : "Search"}
+    </button>
+  </div>
+
+  {semanticResults.length > 0 ? (
+    <div className="mt-6 space-y-4">
+      {semanticResults.map((result) => (
+        <div
+          key={result.candidate.id}
+          className="rounded-2xl border border-white/10 bg-black/20 p-5"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xl font-bold text-white">
+                {result.candidate.candidate_name}
+              </div>
+
+              <div className="mt-1 text-sm text-slate-400">
+                {result.candidate.resume_filename}
+              </div>
+
+              <div className="mt-3 text-sm text-slate-300">
+                {result.candidate.recommendation}
+              </div>
+            </div>
+
+            <div className="text-right">
+              <div className="text-sm text-slate-400">
+                Semantic Match
+              </div>
+
+              <div className="text-3xl font-black text-emerald-400">
+                {result.semantic_score}
+              </div>
+
+              <div className="mt-2 text-sm text-slate-400">
+                ATS Score: {result.candidate.fit_score}%
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : null}
+</div>
+
       <div className="rounded-3xl border border-violet-400/20 bg-violet-500/10 p-6">
         <div className="mb-5">
           <p className="text-sm uppercase tracking-[0.3em] text-violet-300">
