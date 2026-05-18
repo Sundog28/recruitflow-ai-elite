@@ -34,6 +34,7 @@ from app.routes.resume_ocr import router as resume_ocr_router
 from app.routes.recruiter_agent import router as recruiter_agent_router
 from app.routes.ai_outreach import router as ai_outreach_router
 from app.routes.auth_refresh import router as auth_refresh_router
+from app.routes.session import router as session_router
 
 configure_sentry()
 configure_logging()
@@ -184,6 +185,7 @@ app.include_router(resume_ocr_router)
 app.include_router(recruiter_agent_router)
 app.include_router(ai_outreach_router)
 app.include_router(auth_refresh_router)
+app.include_router(session_router)
 
 @app.get("/")
 def root():
