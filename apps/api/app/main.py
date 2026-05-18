@@ -16,6 +16,7 @@ from app.routes.copilot import router as copilot_router
 from app.routes.billing import router as billing_router
 from app.routes.ai_summary import router as ai_summary_router
 from app.routes.vector_search import router as vector_search_router
+from app.routes.ai_intelligence import router as ai_intelligence_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -80,6 +81,7 @@ app.include_router(copilot_router)
 app.include_router(billing_router)
 app.include_router(ai_summary_router)
 app.include_router(vector_search_router)
+app.include_router(ai_intelligence_router)
 
 @app.get("/")
 def root():
