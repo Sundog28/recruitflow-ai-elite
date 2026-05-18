@@ -19,6 +19,7 @@ from app.routes.vector_search import router as vector_search_router
 from app.routes.ai_intelligence import router as ai_intelligence_router
 from app.routes.invitations import router as invitations_router
 from app.routes.team_collaboration import router as team_collaboration_router
+from app.routes.team_security import router as team_security_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -67,6 +68,33 @@ def run_startup_migrations():
             visibility VARCHAR(50) DEFAULT 'team'
         )
         """
+        """
+        CREATE TABLE team_role_permissions (
+            id SERIAL PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT NOW(),
+            role_name VARCHAR(50) UNIQUE NOT NULL,
+            can_manage_team BOOLEAN DEFAULT FALSE,
+            can_manage_candidates BOOLEAN DEFAULT FALSE,
+            can_leave_comments BOOLEAN DEFAULT TRUE,
+            can_view_pipeline BOOLEAN DEFAULT TRUE,
+            can_manage_billing BOOLEAN DEFAULT FALSE,
+            can_invite_recruiters BOOLEAN DEFAULT FALSE
+        )
+        """,
+
+        """
+        CREATE TABLE team_audit_logs (
+            id SERIAL PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT NOW(),
+            team_id INTEGER NOT NULL,
+            recruiter_user_id INTEGER,
+            action_type VARCHAR(100) NOT NULL,
+            target_type VARCHAR(100),
+            target_id INTEGER,
+            action_summary TEXT NOT NULL,
+            metadata_json TEXT
+        )
+        """
     ]
 
     for query in migration_queries:
@@ -110,6 +138,7 @@ app.include_router(vector_search_router)
 app.include_router(ai_intelligence_router)
 app.include_router(invitations_router)
 app.include_router(team_collaboration_router)
+app.include_router(team_security_router)
 
 @app.get("/")
 def root():

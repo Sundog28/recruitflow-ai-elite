@@ -104,6 +104,79 @@ class TeamCandidateComment(Base):
         default="team",
     )
 
+class TeamRolePermission(Base):
+    __tablename__ = "team_role_permissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    role_name = Column(
+        String(50),
+        nullable=False,
+        unique=True,
+    )
+
+    can_manage_team = Column(Boolean, default=False)
+    can_manage_candidates = Column(Boolean, default=False)
+    can_leave_comments = Column(Boolean, default=True)
+    can_view_pipeline = Column(Boolean, default=True)
+    can_manage_billing = Column(Boolean, default=False)
+    can_invite_recruiters = Column(Boolean, default=False)
+
+
+class TeamAuditLog(Base):
+    __tablename__ = "team_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    team_id = Column(
+        Integer,
+        ForeignKey("recruiter_teams.id"),
+        nullable=False,
+    )
+
+    recruiter_user_id = Column(
+        Integer,
+        ForeignKey("recruiter_users.id"),
+        nullable=True,
+    )
+
+    action_type = Column(
+        String(100),
+        nullable=False,
+    )
+
+    target_type = Column(
+        String(100),
+        nullable=True,
+    )
+
+    target_id = Column(
+        Integer,
+        nullable=True,
+    )
+
+    action_summary = Column(
+        Text,
+        nullable=False,
+    )
+
+    metadata_json = Column(
+        Text,
+        nullable=True,
+    )
+    
 class RecruiterUser(Base):
     __tablename__ = "recruiter_users"
 
