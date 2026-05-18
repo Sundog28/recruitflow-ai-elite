@@ -7,6 +7,8 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.core.rate_limit import limiter
+from app.core.logging_config import configure_logging
+from app.core.request_logging import RequestLoggingMiddleware
 
 from app.db.database import Base
 from app.db.database import engine
@@ -28,6 +30,7 @@ from app.routes.team_security import router as team_security_router
 from app.routes.team_billing import router as team_billing_router
 from app.routes.ai_jobs import router as ai_jobs_router
 
+configure_logging()
 Base.metadata.create_all(bind=engine)
 
 
@@ -138,6 +141,7 @@ app.add_exception_handler(
 
 app.add_middleware(
     CORSMiddleware,
+    app.add_middleware(RequestLoggingMiddleware),
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
