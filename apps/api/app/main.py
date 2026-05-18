@@ -141,13 +141,13 @@ app.add_exception_handler(
 
 app.add_middleware(
     CORSMiddleware,
-    app.add_middleware(RequestLoggingMiddleware),
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
