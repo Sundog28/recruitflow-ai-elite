@@ -1,8 +1,15 @@
+import hashlib
+import json
 import os
+
 from openai import OpenAI
+
+from app.services.redis_service import get_cache
+from app.services.redis_service import set_cache
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MODEL_NAME = "gpt-4.1-mini"
 
 client = OpenAI(
     api_key=OPENAI_API_KEY,
@@ -58,6 +65,30 @@ def generate_openai_recruiter_response(
             "model": "not_configured",
         }
 
+    cache_payload = {
+        "candidate_id": candidate.id,
+        "fit_score": candidate.fit_score,
+        "updated_context": build_candidate_context(candidate),
+        "question": question,
+        "model": MODEL_NAME,
+    }
+
+    cache_key = (
+        "openai_recruiter:"
+        + hashlib.md5(
+            json.dumps(
+                cache_payload,
+                sort_keys=True,
+                default=str,
+            ).encode("utf-8")
+        ).hexdigest()
+    )
+
+    cached_response = get_cache(cache_key)
+
+    if cached_response:
+        return cached_response
+
     candidate_context = build_candidate_context(candidate)
 
     prompt = f"""
@@ -85,11 +116,19 @@ Respond with:
 """
 
     response = client.responses.create(
-        model="gpt-4.1-mini",
+        model=MODEL_NAME,
         input=prompt,
     )
 
-    return {
+    response_payload = {
         "answer": response.output_text,
-        "model": "gpt-4.1-mini",
+        "model": MODEL_NAME,
     }
+
+    set_cache(
+        cache_key,
+        response_payload,
+        expiration_seconds=3600,
+    )
+
+    return response_payload
