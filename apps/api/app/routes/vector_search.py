@@ -39,6 +39,37 @@ def serialize_vector_candidate(
     }
 
 
+def normalize_vector(value):
+    if value is None:
+        return []
+
+    if isinstance(value, list):
+        return value
+
+    if isinstance(value, tuple):
+        return list(value)
+
+    if hasattr(value, "tolist"):
+        return value.tolist()
+
+    if isinstance(value, str):
+        cleaned = value.strip().replace("[", "").replace("]", "")
+
+        if not cleaned:
+            return []
+
+        return [
+            float(part.strip())
+            for part in cleaned.split(",")
+            if part.strip()
+        ]
+
+    try:
+        return list(value)
+    except Exception:
+        return []
+
+
 @router.post("/candidate/{candidate_id}/embed")
 def embed_candidate(candidate_id: int):
     db: Session = SessionLocal()
@@ -71,7 +102,9 @@ def embed_candidate(candidate_id: int):
             "message": "Candidate embedding generated.",
             "candidate_id": candidate.id,
             "embedding_model": candidate.embedding_model,
-            "embedding_dimensions": len(candidate.candidate_embedding or []),
+            "embedding_dimensions": len(
+                normalize_vector(candidate.candidate_embedding)
+            ),
         }
 
     finally:
@@ -141,22 +174,26 @@ def vector_search_candidates(
         scored_candidates = []
 
         for candidate in candidates:
-            candidate_vector = candidate.candidate_embedding
+            candidate_vector = normalize_vector(
+                candidate.candidate_embedding
+            )
 
             if not candidate_vector:
                 continue
 
             score = cosine_similarity(
                 query_embedding,
-                list(candidate_vector),
+                candidate_vector,
             )
+
+            rounded_score = round(score, 4)
 
             scored_candidates.append(
                 {
-                    "score": round(score, 4),
+                    "score": rounded_score,
                     "candidate": serialize_vector_candidate(
                         candidate,
-                        round(score, 4),
+                        rounded_score,
                     ),
                 }
             )
