@@ -1,18 +1,21 @@
 from fastapi import APIRouter
 from fastapi import BackgroundTasks
 from fastapi import Form
+
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
 from app.db.models import AnalysisRecord
 
-from app.services.job_store import create_job
-from app.services.job_store import get_job
-from app.services.job_store import list_jobs
-from app.services.job_store import update_job
-
 from app.services.openai_recruiter_service import (
     generate_openai_recruiter_response,
+)
+
+from app.services.redis_job_store import (
+    create_job,
+    get_job,
+    list_jobs,
+    update_job,
 )
 
 
