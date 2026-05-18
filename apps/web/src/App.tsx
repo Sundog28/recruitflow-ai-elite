@@ -286,32 +286,6 @@ export default function App() {
         response.access_token,
         response.user
       );
-    } else {
-      const response =
-        await loginRecruiter(
-          authEmail,
-          authPassword
-        );
-
-      saveTokens(
-        response.access_token,
-        response.refresh_token
-      );
-
-      login(
-        response.access_token,
-        response.user
-      );
-    }
-  } catch (err) {
-    const message =
-      err instanceof Error
-        ? err.message
-        : "Authentication failed.";
-
-    setAuthError(message);
-  response.user
-);
     }
   } catch (err) {
     const message =
