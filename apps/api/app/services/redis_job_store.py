@@ -6,10 +6,23 @@ from app.services.redis_service import redis_client
 
 
 JOB_PREFIX = "recruitflow:jobs:"
+MEMORY_JOBS = {}
 
 
 def _job_key(job_id: str):
     return f"{JOB_PREFIX}{job_id}"
+
+
+def _now():
+    return datetime.utcnow().isoformat()
+
+
+def _redis_available():
+    try:
+        redis_client.ping()
+        return True
+    except Exception:
+        return False
 
 
 def create_job(
@@ -25,15 +38,21 @@ def create_job(
         "payload": payload or {},
         "result": None,
         "error": None,
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": _now(),
+        "updated_at": _now(),
     }
 
-    redis_client.set(
-        _job_key(job_id),
-        json.dumps(job),
-    )
+    if _redis_available():
+        try:
+            redis_client.set(
+                _job_key(job_id),
+                json.dumps(job),
+            )
+            return job
+        except Exception:
+            pass
 
+    MEMORY_JOBS[job_id] = job
     return job
 
 
@@ -51,40 +70,56 @@ def update_job(
     existing["status"] = status
     existing["result"] = result
     existing["error"] = error
-    existing["updated_at"] = (
-        datetime.utcnow().isoformat()
-    )
+    existing["updated_at"] = _now()
 
-    redis_client.set(
-        _job_key(job_id),
-        json.dumps(existing),
-    )
+    if _redis_available():
+        try:
+            redis_client.set(
+                _job_key(job_id),
+                json.dumps(existing),
+            )
+            return existing
+        except Exception:
+            pass
 
+    MEMORY_JOBS[job_id] = existing
     return existing
 
 
 def get_job(job_id: str):
-    value = redis_client.get(_job_key(job_id))
+    if _redis_available():
+        try:
+            value = redis_client.get(_job_key(job_id))
 
-    if not value:
-        return None
+            if value:
+                return json.loads(value)
+        except Exception:
+            pass
 
-    return json.loads(value)
+    return MEMORY_JOBS.get(job_id)
 
 
 def list_jobs(limit: int = 100):
-    keys = redis_client.keys(f"{JOB_PREFIX}*")
-
     jobs = []
 
-    for key in keys:
-        value = redis_client.get(key)
+    if _redis_available():
+        try:
+            keys = redis_client.keys(f"{JOB_PREFIX}*")
 
-        if value:
-            jobs.append(json.loads(value))
+            for key in keys:
+                value = redis_client.get(key)
+
+                if value:
+                    jobs.append(json.loads(value))
+
+        except Exception:
+            jobs = []
+
+    if not jobs:
+        jobs = list(MEMORY_JOBS.values())
 
     jobs.sort(
-        key=lambda x: x["created_at"],
+        key=lambda job: job["created_at"],
         reverse=True,
     )
 
