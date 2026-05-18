@@ -1,6 +1,7 @@
 import RecruiterKanbanBoard from "./RecruiterKanbanBoard";
 import RecruiterEnterpriseTools from "./RecruiterEnterpriseTools";
 import AICandidateSummaryPanel from "./AICandidateSummaryPanel";
+import VectorTalentSearchPanel from "./VectorTalentSearchPanel";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -749,45 +750,7 @@ export default function RecruiterDashboard() {
       <RecruiterEnterpriseTools candidates={filteredCandidates} />
       <AICandidateSummaryPanel candidates={filteredCandidates} />
 
-      <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
-        <div className="mb-5">
-          <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">
-            Semantic Talent Search
-          </p>
-
-          <h3 className="mt-2 text-2xl font-bold text-white">
-            Search Candidates
-            Intelligently
-          </h3>
-        </div>
-
-        <div className="flex flex-col gap-3 md:flex-row">
-          <input
-            type="text"
-            value={semanticQuery}
-            onChange={(e) =>
-              setSemanticQuery(
-                e.target.value
-              )
-            }
-            placeholder="Search candidates..."
-            className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
-          />
-
-          <button
-            type="button"
-            onClick={
-              handleSemanticSearch
-            }
-            disabled={semanticLoading}
-            className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-black"
-          >
-            {semanticLoading
-              ? "Searching..."
-              : "Search"}
-          </button>
-        </div>
-      </div>
+      <VectorTalentSearchPanel />
 
       <div className="rounded-3xl border border-cyan-400/20 bg-cyan-500/10 p-6">
         <div className="mb-5">
