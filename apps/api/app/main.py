@@ -26,6 +26,7 @@ from app.routes.invitations import router as invitations_router
 from app.routes.team_collaboration import router as team_collaboration_router
 from app.routes.team_security import router as team_security_router
 from app.routes.team_billing import router as team_billing_router
+from app.routes.ai_jobs import router as ai_jobs_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -158,6 +159,7 @@ app.include_router(invitations_router)
 app.include_router(team_collaboration_router)
 app.include_router(team_security_router)
 app.include_router(team_billing_router)
+app.include_router(ai_jobs_router)
 
 @app.get("/")
 def root():
