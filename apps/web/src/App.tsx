@@ -2,6 +2,7 @@ import RecruiterDashboard from "./components/RecruiterDashboard";
 import { useEffect, useMemo, useState } from "react";
 import PricingSection from "./components/PricingSection";
 import { useAuth } from "./context/AuthContext";
+import LandingPage from "./components/LandingPage";
 import {
   analyzeResume,
   getHistory,
@@ -476,6 +477,8 @@ ${result.score_explanation?.join("\n") || "N/A"}
             workflows, and hiring decision support.
           </p>
         </header>
+
+        <LandingPage />
 
         {!recruiter ? (
   <section className="mb-10 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_45px_rgba(139,92,246,0.16)]">
