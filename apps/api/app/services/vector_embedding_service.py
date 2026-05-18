@@ -1,15 +1,17 @@
-from functools import lru_cache
+import os
 from typing import List
 
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
 
 
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL_NAME = "text-embedding-3-small"
+EMBEDDING_DIMENSIONS = 384
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-@lru_cache(maxsize=1)
-def get_embedding_model():
-    return SentenceTransformer(EMBEDDING_MODEL_NAME)
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+)
 
 
 def build_candidate_embedding_text(candidate) -> str:
@@ -31,14 +33,21 @@ def build_candidate_embedding_text(candidate) -> str:
 
 
 def generate_embedding(text: str) -> List[float]:
-    model = get_embedding_model()
+    if not OPENAI_API_KEY:
+        raise RuntimeError(
+            "OPENAI_API_KEY is missing. Cannot generate embeddings."
+        )
 
-    embedding = model.encode(
-        text,
-        normalize_embeddings=True,
+    if not text.strip():
+        text = "empty candidate profile"
+
+    response = client.embeddings.create(
+        model=EMBEDDING_MODEL_NAME,
+        input=text,
+        dimensions=EMBEDDING_DIMENSIONS,
     )
 
-    return embedding.tolist()
+    return response.data[0].embedding
 
 
 def generate_candidate_embedding(candidate) -> dict:
