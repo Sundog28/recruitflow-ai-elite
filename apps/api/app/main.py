@@ -30,6 +30,7 @@ from app.routes.team_security import router as team_security_router
 from app.routes.team_billing import router as team_billing_router
 from app.routes.ai_jobs import router as ai_jobs_router
 
+
 configure_logging()
 Base.metadata.create_all(bind=engine)
 
@@ -42,6 +43,7 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN recruiter_notes TEXT",
         "ALTER TABLE analysis_records ADD COLUMN candidate_tags TEXT",
         "ALTER TABLE analysis_records ADD COLUMN bookmarked BOOLEAN DEFAULT false",
+
         "ALTER TABLE recruiter_users ADD COLUMN team_id INTEGER",
         "ALTER TABLE recruiter_users ADD COLUMN role VARCHAR(50) DEFAULT 'recruiter'",
         "ALTER TABLE recruiter_users ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
@@ -50,16 +52,20 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN analyses_used INTEGER DEFAULT 0",
+
         "CREATE EXTENSION IF NOT EXISTS vector",
+
         "ALTER TABLE analysis_records ADD COLUMN embedding_text TEXT",
         "ALTER TABLE analysis_records ADD COLUMN embedding_model VARCHAR(100)",
         "ALTER TABLE analysis_records ADD COLUMN candidate_embedding vector(384)",
+
         "ALTER TABLE recruiter_teams ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_teams ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_customer_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_count INTEGER DEFAULT 1",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_limit INTEGER DEFAULT 1",
+
         """
         CREATE TABLE recruiter_invitations (
             id SERIAL PRIMARY KEY,
@@ -72,7 +78,8 @@ def run_startup_migrations():
             status VARCHAR(50) DEFAULT 'pending',
             accepted_at TIMESTAMP NULL
         )
-        """
+        """,
+
         """
         CREATE TABLE team_candidate_comments (
             id SERIAL PRIMARY KEY,
@@ -83,7 +90,8 @@ def run_startup_migrations():
             comment TEXT NOT NULL,
             visibility VARCHAR(50) DEFAULT 'team'
         )
-        """
+        """,
+
         """
         CREATE TABLE team_role_permissions (
             id SERIAL PRIMARY KEY,
@@ -110,7 +118,7 @@ def run_startup_migrations():
             action_summary TEXT NOT NULL,
             metadata_json TEXT
         )
-        """
+        """,
     ]
 
     for query in migration_queries:
@@ -132,12 +140,14 @@ app = FastAPI(
     version="2.7.0",
 )
 
+
 app.state.limiter = limiter
 
 app.add_exception_handler(
     RateLimitExceeded,
     _rate_limit_exceeded_handler,
 )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -148,6 +158,7 @@ app.add_middleware(
 )
 
 app.add_middleware(RequestLoggingMiddleware)
+
 
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
@@ -164,6 +175,7 @@ app.include_router(team_collaboration_router)
 app.include_router(team_security_router)
 app.include_router(team_billing_router)
 app.include_router(ai_jobs_router)
+
 
 @app.get("/")
 def root():
