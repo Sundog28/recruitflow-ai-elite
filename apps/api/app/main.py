@@ -9,6 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from app.core.rate_limit import limiter
 from app.core.logging_config import configure_logging
 from app.core.request_logging import RequestLoggingMiddleware
+from app.core.sentry_config import configure_sentry
 
 from app.db.database import Base
 from app.db.database import engine
@@ -29,9 +30,11 @@ from app.routes.team_collaboration import router as team_collaboration_router
 from app.routes.team_security import router as team_security_router
 from app.routes.team_billing import router as team_billing_router
 from app.routes.ai_jobs import router as ai_jobs_router
+from app.routes.resume_ocr import router as resume_ocr_router
 
-
+configure_sentry()
 configure_logging()
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -137,7 +140,7 @@ run_startup_migrations()
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.7.0",
+    version="2.8.0",
 )
 
 
@@ -175,7 +178,7 @@ app.include_router(team_collaboration_router)
 app.include_router(team_security_router)
 app.include_router(team_billing_router)
 app.include_router(ai_jobs_router)
-
+app.include_router(resume_ocr_router)
 
 @app.get("/")
 def root():
@@ -189,5 +192,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.7.0",
+        "version": "2.8.0",
     }
