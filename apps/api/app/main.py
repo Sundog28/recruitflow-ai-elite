@@ -45,6 +45,13 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN embedding_text TEXT",
         "ALTER TABLE analysis_records ADD COLUMN embedding_model VARCHAR(100)",
         "ALTER TABLE analysis_records ADD COLUMN candidate_embedding vector(384)",
+        "ALTER TABLE recruiter_teams ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
+        "ALTER TABLE recruiter_teams ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
+        "ALTER TABLE recruiter_teams ADD COLUMN stripe_customer_id VARCHAR(255)",
+        "ALTER TABLE recruiter_teams ADD COLUMN stripe_subscription_id VARCHAR(255)",
+        "ALTER TABLE recruiter_teams ADD COLUMN seat_count INTEGER DEFAULT 1",
+        "ALTER TABLE recruiter_teams ADD COLUMN seat_limit INTEGER DEFAULT 1",
+        "ALTER TABLE recruiter_teams ADD COLUMN monthly_price FLOAT DEFAULT 0.0",
         """
         CREATE TABLE recruiter_invitations (
             id SERIAL PRIMARY KEY,
@@ -96,13 +103,6 @@ def run_startup_migrations():
             metadata_json TEXT
         )
         """
-        "ALTER TABLE recruiter_teams ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
-        "ALTER TABLE recruiter_teams ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
-        "ALTER TABLE recruiter_teams ADD COLUMN stripe_customer_id VARCHAR(255)",
-        "ALTER TABLE recruiter_teams ADD COLUMN stripe_subscription_id VARCHAR(255)",
-        "ALTER TABLE recruiter_teams ADD COLUMN seat_count INTEGER DEFAULT 1",
-        "ALTER TABLE recruiter_teams ADD COLUMN seat_limit INTEGER DEFAULT 1",
-        "ALTER TABLE recruiter_teams ADD COLUMN monthly_price FLOAT DEFAULT 0.0",
     ]
 
     for query in migration_queries:
