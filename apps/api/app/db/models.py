@@ -23,6 +23,14 @@ class RecruiterTeam(Base):
     team_name = Column(String(255), nullable=False)
     owner_id = Column(Integer, nullable=True)
 
+    plan_name = Column(String(100), default="free")
+    subscription_status = Column(String(50), default="free")
+    stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
+    seat_count = Column(Integer, default=1)
+    seat_limit = Column(Integer, default=1)
+    monthly_price = Column(Float, default=0.0)
+
 class RecruiterInvitation(Base):
     __tablename__ = "recruiter_invitations"
 
@@ -176,7 +184,7 @@ class TeamAuditLog(Base):
         Text,
         nullable=True,
     )
-    
+
 class RecruiterUser(Base):
     __tablename__ = "recruiter_users"
 
