@@ -3,6 +3,7 @@ import RecruiterEnterpriseTools from "./RecruiterEnterpriseTools";
 import AICandidateSummaryPanel from "./AICandidateSummaryPanel";
 import VectorTalentSearchPanel from "./VectorTalentSearchPanel";
 import { useEffect, useMemo, useState } from "react";
+import AIJobQueuePanel from "./AIJobQueuePanel";
 
 import {
   askCopilotQuestion,
@@ -747,8 +748,16 @@ export default function RecruiterDashboard() {
       </div>
 
       <RecruiterKanbanBoard />
-      <RecruiterEnterpriseTools candidates={filteredCandidates} />
-      <AICandidateSummaryPanel candidates={filteredCandidates} />
+
+      <RecruiterEnterpriseTools
+        candidates={filteredCandidates}
+      />
+
+      <AICandidateSummaryPanel
+        candidates={filteredCandidates}
+      />
+
+      <AIJobQueuePanel />
 
       <VectorTalentSearchPanel />
 
