@@ -1,6 +1,6 @@
 import RecruiterKanbanBoard from "./RecruiterKanbanBoard";
 import RecruiterEnterpriseTools from "./RecruiterEnterpriseTools";
-
+import AICandidateSummaryPanel from "./AICandidateSummaryPanel";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -747,6 +747,7 @@ export default function RecruiterDashboard() {
 
       <RecruiterKanbanBoard />
       <RecruiterEnterpriseTools candidates={filteredCandidates} />
+      <AICandidateSummaryPanel candidates={filteredCandidates} />
 
       <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-6">
         <div className="mb-5">
