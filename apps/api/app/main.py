@@ -56,7 +56,6 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_count INTEGER DEFAULT 1",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_limit INTEGER DEFAULT 1",
-        "ALTER TABLE recruiter_teams ADD COLUMN monthly_price FLOAT DEFAULT 0.0",
         """
         CREATE TABLE recruiter_invitations (
             id SERIAL PRIMARY KEY,

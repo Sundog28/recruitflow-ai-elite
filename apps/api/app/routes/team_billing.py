@@ -46,7 +46,7 @@ def serialize_team_billing(team: RecruiterTeam):
         "stripe_subscription_id": team.stripe_subscription_id,
         "seat_count": team.seat_count or 1,
         "seat_limit": team.seat_limit or 1,
-        "monthly_price": team.monthly_price or 0.0,
+        "monthly_price": getattr(team, "monthly_price", 0.0) or 0.0,
     }
 
 
