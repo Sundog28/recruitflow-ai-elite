@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import PricingSection from "./components/PricingSection";
 import { useAuth } from "./context/AuthContext";
 import LandingPage from "./components/LandingPage";
+import { saveTokens } from "./lib/auth";
 import {
   analyzeResume,
   getHistory,
@@ -260,6 +261,11 @@ export default function App() {
           companyName
         );
 
+      saveTokens(
+        response.access_token,
+        response.refresh_token
+      );
+
       login(
         response.access_token,
         response.user
@@ -271,10 +277,41 @@ export default function App() {
           authPassword
         );
 
+      saveTokens(
+        response.access_token,
+        response.refresh_token
+      );
+
       login(
         response.access_token,
         response.user
       );
+    } else {
+      const response =
+        await loginRecruiter(
+          authEmail,
+          authPassword
+        );
+
+      saveTokens(
+        response.access_token,
+        response.refresh_token
+      );
+
+      login(
+        response.access_token,
+        response.user
+      );
+    }
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Authentication failed.";
+
+    setAuthError(message);
+  response.user
+);
     }
   } catch (err) {
     const message =
