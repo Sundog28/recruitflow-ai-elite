@@ -23,7 +23,56 @@ class RecruiterTeam(Base):
     team_name = Column(String(255), nullable=False)
     owner_id = Column(Integer, nullable=True)
 
+class RecruiterInvitation(Base):
+    __tablename__ = "recruiter_invitations"
 
+    id = Column(Integer, primary_key=True, index=True)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    email = Column(
+        String(255),
+        nullable=False,
+        index=True,
+    )
+
+    invited_by_user_id = Column(
+        Integer,
+        ForeignKey("recruiter_users.id"),
+        nullable=True,
+    )
+
+    team_id = Column(
+        Integer,
+        ForeignKey("recruiter_teams.id"),
+        nullable=False,
+    )
+
+    role = Column(
+        String(50),
+        default="recruiter",
+    )
+
+    invitation_token = Column(
+        String(255),
+        unique=True,
+        nullable=False,
+    )
+
+    status = Column(
+        String(50),
+        default="pending",
+    )
+
+    accepted_at = Column(
+        DateTime,
+        nullable=True,
+    )
+    
 class RecruiterUser(Base):
     __tablename__ = "recruiter_users"
 
