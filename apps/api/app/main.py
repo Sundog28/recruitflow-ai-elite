@@ -36,6 +36,10 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN analyses_used INTEGER DEFAULT 0",
+        "CREATE EXTENSION IF NOT EXISTS vector",
+        "ALTER TABLE analysis_records ADD COLUMN embedding_text TEXT",
+        "ALTER TABLE analysis_records ADD COLUMN embedding_model VARCHAR(100)",
+        "ALTER TABLE analysis_records ADD COLUMN candidate_embedding vector(384)",
     ]
 
     for query in migration_queries:

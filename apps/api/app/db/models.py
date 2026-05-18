@@ -9,6 +9,8 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 
+from pgvector.sqlalchemy import Vector
+
 from app.db.database import Base
 
 
@@ -33,25 +35,12 @@ class RecruiterUser(Base):
     company_name = Column(String(255), nullable=True)
     hashed_password = Column(String(255), nullable=False)
 
-    subscription_status = Column(
-        String(50),
-        default="free"
-    )
+    subscription_status = Column(String(50), default="free")
+    stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
 
-    stripe_customer_id = Column(
-        String(255),
-        nullable=True
-    )
-
-    stripe_subscription_id = Column(
-        String(255),
-        nullable=True
-    )
-
-    plan_name = Column(
-        String(100),
-        default="free"
-    )
+    plan_name = Column(String(100), default="free")
+    plan = Column(String(50), default="free")
 
     team_id = Column(
         Integer,
@@ -59,37 +48,13 @@ class RecruiterUser(Base):
         nullable=True,
     )
 
-    role = Column(
-        String(50),
-        default="recruiter",
-    )
+    role = Column(String(50), default="recruiter")
 
-    plan = Column(
-        String(50),
-        default="free",
-    )
-
-    analysis_count = Column(
-        Integer,
-        default=0,
-    )
+    analysis_count = Column(Integer, default=0)
+    analyses_used = Column(Integer, default=0)
 
     is_active = Column(Boolean, default=True)
 
-    subscription_status = Column(
-        String(50),
-        default="free"
-    )
-
-    plan_name = Column(
-        String(50),
-        default="free"
-    )
-
-    analyses_used = Column(
-        Integer,
-        default=0
-    )
 
 class AnalysisRecord(Base):
     __tablename__ = "analysis_records"
@@ -144,3 +109,11 @@ class AnalysisRecord(Base):
     bookmarked = Column(Boolean, default=False)
 
     job_description = Column(Text, nullable=False)
+
+    embedding_text = Column(Text, nullable=True)
+    embedding_model = Column(String(100), nullable=True)
+
+    # all-MiniLM-L6-v2 creates 384-dimensional vectors.
+    # Later, if we switch to OpenAI text-embedding-3-small,
+    # this should become Vector(1536).
+    candidate_embedding = Column(Vector(384), nullable=True)
