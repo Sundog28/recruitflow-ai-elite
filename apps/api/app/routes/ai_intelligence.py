@@ -1,13 +1,17 @@
 from fastapi import APIRouter
 from fastapi import Form
+from fastapi import Request
+
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import limiter
 from app.db.database import SessionLocal
 from app.db.models import AnalysisRecord
 
 from app.services.openai_recruiter_service import (
     generate_openai_recruiter_response,
 )
+
 
 router = APIRouter(
     prefix="/api/v1/ai-intelligence",
@@ -16,7 +20,9 @@ router = APIRouter(
 
 
 @router.post("/candidate/{candidate_id}/interview-evaluation")
+@limiter.limit("20 per hour")
 def evaluate_candidate_interview(
+    request: Request,
     candidate_id: int,
     interview_notes: str = Form(...),
 ):
@@ -72,7 +78,9 @@ Return:
 
 
 @router.get("/candidate/{candidate_id}/advanced-recommendation")
+@limiter.limit("30 per hour")
 def generate_advanced_hiring_recommendation(
+    request: Request,
     candidate_id: int,
 ):
     db: Session = SessionLocal()
@@ -125,7 +133,9 @@ Be specific, practical, and evidence-based.
 
 
 @router.post("/candidate/{candidate_id}/memory")
+@limiter.limit("30 per hour")
 def recruiter_memory_response(
+    request: Request,
     candidate_id: int,
     recruiter_context: str = Form(...),
     question: str = Form(...),
