@@ -18,6 +18,7 @@ from app.routes.ai_summary import router as ai_summary_router
 from app.routes.vector_search import router as vector_search_router
 from app.routes.ai_intelligence import router as ai_intelligence_router
 from app.routes.invitations import router as invitations_router
+from app.routes.team_collaboration import router as team_collaboration_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -53,6 +54,17 @@ def run_startup_migrations():
             invitation_token VARCHAR(255) UNIQUE NOT NULL,
             status VARCHAR(50) DEFAULT 'pending',
             accepted_at TIMESTAMP NULL
+        )
+        """
+        """
+        CREATE TABLE team_candidate_comments (
+            id SERIAL PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT NOW(),
+            team_id INTEGER NOT NULL,
+            candidate_id INTEGER NOT NULL,
+            recruiter_user_id INTEGER,
+            comment TEXT NOT NULL,
+            visibility VARCHAR(50) DEFAULT 'team'
         )
         """
     ]
@@ -97,6 +109,7 @@ app.include_router(ai_summary_router)
 app.include_router(vector_search_router)
 app.include_router(ai_intelligence_router)
 app.include_router(invitations_router)
+app.include_router(team_collaboration_router)
 
 @app.get("/")
 def root():

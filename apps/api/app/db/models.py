@@ -72,7 +72,38 @@ class RecruiterInvitation(Base):
         DateTime,
         nullable=True,
     )
-    
+
+class TeamCandidateComment(Base):
+    __tablename__ = "team_candidate_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    team_id = Column(
+        Integer,
+        ForeignKey("recruiter_teams.id"),
+        nullable=False,
+    )
+
+    candidate_id = Column(
+        Integer,
+        ForeignKey("analysis_records.id"),
+        nullable=False,
+    )
+
+    recruiter_user_id = Column(
+        Integer,
+        ForeignKey("recruiter_users.id"),
+        nullable=True,
+    )
+
+    comment = Column(Text, nullable=False)
+
+    visibility = Column(
+        String(50),
+        default="team",
+    )
+
 class RecruiterUser(Base):
     __tablename__ = "recruiter_users"
 
