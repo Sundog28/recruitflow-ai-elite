@@ -8,11 +8,18 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.db.database import get_db
 from app.db.models import RecruiterUser
-from app.services.auth_service import create_access_token
+
+from app.core.security import create_access_token
+from app.core.security import create_refresh_token
+
 from app.services.auth_service import hash_password
 from app.services.auth_service import verify_password
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+
+router = APIRouter(
+    prefix="/api/v1/auth",
+    tags=["auth"],
+)
 
 
 def serialize_user(user: RecruiterUser):
@@ -23,9 +30,37 @@ def serialize_user(user: RecruiterUser):
         "company_name": user.company_name,
         "plan": getattr(user, "plan", "free") or "free",
         "plan_name": getattr(user, "plan_name", "free") or "free",
-        "subscription_status": getattr(user, "subscription_status", "free") or "free",
+        "subscription_status": (
+            getattr(user, "subscription_status", "free") or "free"
+        ),
         "analysis_count": getattr(user, "analysis_count", 0) or 0,
     }
+
+
+def build_auth_response(
+    user: RecruiterUser,
+    message: str | None = None,
+):
+    token_payload = {
+        "recruiter_user_id": user.id,
+        "email": user.email,
+        "sub": user.email,
+    }
+
+    access_token = create_access_token(token_payload)
+    refresh_token = create_refresh_token(token_payload)
+
+    response = {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user": serialize_user(user),
+    }
+
+    if message:
+        response["message"] = message
+
+    return response
 
 
 @router.post("/signup")
@@ -59,13 +94,10 @@ def signup(
     db.commit()
     db.refresh(user)
 
-    token = create_access_token({"sub": user.email})
-
-    return {
-        "message": "Recruiter account created.",
-        "access_token": token,
-        "user": serialize_user(user),
-    }
+    return build_auth_response(
+        user=user,
+        message="Recruiter account created.",
+    )
 
 
 @router.post("/login")
@@ -92,12 +124,7 @@ def login(
             detail="Invalid credentials.",
         )
 
-    token = create_access_token({"sub": user.email})
-
-    return {
-        "access_token": token,
-        "user": serialize_user(user),
-    }
+    return build_auth_response(user=user)
 
 
 @router.get("/me/{recruiter_id}")
@@ -154,6 +181,7 @@ def dev_upgrade_recruiter(recruiter_id: int):
 
     finally:
         db.close()
+
 
 @router.patch("/me/{recruiter_id}/dev-downgrade")
 def dev_downgrade_recruiter(recruiter_id: int):
