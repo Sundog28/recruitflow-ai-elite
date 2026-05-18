@@ -32,6 +32,7 @@ from app.routes.team_billing import router as team_billing_router
 from app.routes.ai_jobs import router as ai_jobs_router
 from app.routes.resume_ocr import router as resume_ocr_router
 from app.routes.recruiter_agent import router as recruiter_agent_router
+from app.routes.ai_outreach import router as ai_outreach_router
 
 configure_sentry()
 configure_logging()
@@ -180,6 +181,7 @@ app.include_router(team_billing_router)
 app.include_router(ai_jobs_router)
 app.include_router(resume_ocr_router)
 app.include_router(recruiter_agent_router)
+app.include_router(ai_outreach_router)
 
 @app.get("/")
 def root():
