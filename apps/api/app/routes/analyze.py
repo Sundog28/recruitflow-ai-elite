@@ -13,11 +13,12 @@ from fastapi import UploadFile
 from pypdf import PdfReader
 from sqlalchemy.orm import Session
 
+from app.core.auth_dependencies import get_current_recruiter
 from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
-
 from app.services.scoring_service import ScoringService
+
 
 router = APIRouter(prefix="/api/v1", tags=["analyze"])
 
@@ -114,10 +115,13 @@ def health():
 
 
 @router.get("/history")
-def history(db: Session = Depends(get_db)):
+def history(
+    db: Session = Depends(get_db),
+    recruiter: RecruiterUser = Depends(get_current_recruiter),
+):
     records = (
         db.query(AnalysisRecord)
-        .filter(AnalysisRecord.recruiter_id == 1)
+        .filter(AnalysisRecord.recruiter_id == recruiter.id)
         .order_by(AnalysisRecord.created_at.desc())
         .limit(25)
         .all()
@@ -204,6 +208,7 @@ async def analyze_upload(
     job_description: str = Form(...),
     resume_file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    recruiter: RecruiterUser = Depends(get_current_recruiter),
 ):
     if not job_description.strip():
         raise HTTPException(
@@ -230,21 +235,14 @@ async def analyze_upload(
         content,
     )
 
-    recruiter = (
-        db.query(RecruiterUser)
-        .filter(RecruiterUser.id == 1)
-        .first()
-    )
-
-    if recruiter:
-        if (
-            recruiter.plan == "free"
-            and recruiter.analysis_count >= 3
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail="Free trial limit reached. Upgrade to RecruitFlow Pro.",
-            )
+    if (
+        recruiter.plan == "free"
+        and recruiter.analysis_count >= 3
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Free trial limit reached. Upgrade to RecruitFlow Pro.",
+        )
 
     score = ScoringService.score(
         resume_text=resume_text,
@@ -278,7 +276,7 @@ async def analyze_upload(
     }
 
     db_record = AnalysisRecord(
-        recruiter_id=1,
+        recruiter_id=recruiter.id,
         candidate_name=result["candidate_name"],
         resume_filename=result["resume_filename"],
         fit_score=result["fit_score"],
@@ -307,8 +305,10 @@ async def analyze_upload(
     db.commit()
     db.refresh(db_record)
 
-    if recruiter:
-        recruiter.analysis_count = (recruiter.analysis_count or 0) + 1
-        db.commit()
+    recruiter.analysis_count = (
+        recruiter.analysis_count or 0
+    ) + 1
+
+    db.commit()
 
     return result
