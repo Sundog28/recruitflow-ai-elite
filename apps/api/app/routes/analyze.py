@@ -117,6 +117,7 @@ def health():
 def history(db: Session = Depends(get_db)):
     records = (
         db.query(AnalysisRecord)
+        .filter(AnalysisRecord.recruiter_id == 1)
         .order_by(AnalysisRecord.created_at.desc())
         .limit(25)
         .all()
@@ -277,6 +278,7 @@ async def analyze_upload(
     }
 
     db_record = AnalysisRecord(
+        recruiter_id=1,
         candidate_name=result["candidate_name"],
         resume_filename=result["resume_filename"],
         fit_score=result["fit_score"],
