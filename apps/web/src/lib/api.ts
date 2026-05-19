@@ -1,6 +1,20 @@
+import { getAccessToken } from "./auth";
+
 const API_BASE =
   import.meta.env.VITE_API_URL ||
   "https://recruitflow-ai-elite-api.onrender.com";
+
+function authHeaders() {
+  const token = getAccessToken();
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
 
 export type RecruiterUser = {
   id: number;
@@ -11,6 +25,8 @@ export type RecruiterUser = {
 
 export type AuthResponse = {
   access_token: string;
+  refresh_token: string;
+  token_type?: string;
   user: RecruiterUser;
 };
 
@@ -239,6 +255,9 @@ export async function analyzeResume(
 
   const response = await fetch(`${API_BASE}/api/v1/analyze-upload`, {
     method: "POST",
+    headers: {
+      ...authHeaders(),
+    },
     body: formData,
   });
 
@@ -269,7 +288,11 @@ export async function rewriteResume(
 }
 
 export async function getHistory(): Promise<HistoryItem[]> {
-  const response = await fetch(`${API_BASE}/api/v1/history`);
+  const response = await fetch(`${API_BASE}/api/v1/history`, {
+    headers: {
+      ...authHeaders(),
+    },
+  });
 
   return parseJsonResponse<HistoryItem[]>(
     response,
@@ -278,7 +301,11 @@ export async function getHistory(): Promise<HistoryItem[]> {
 }
 
 export async function getRecruiterDashboard(): Promise<RecruiterDashboardResponse> {
-  const response = await fetch(`${API_BASE}/api/v1/recruiter/dashboard`);
+  const response = await fetch(`${API_BASE}/api/v1/recruiter/dashboard`, {
+    headers: {
+      ...authHeaders(),
+    },
+  });
 
   return parseJsonResponse<RecruiterDashboardResponse>(
     response,
@@ -291,6 +318,9 @@ export async function toggleCandidateBookmark(candidateId: number) {
     `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/bookmark`,
     {
       method: "PATCH",
+      headers: {
+        ...authHeaders(),
+      },
     }
   );
 
@@ -312,6 +342,9 @@ export async function updateCandidateStatus(
     `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/status`,
     {
       method: "PATCH",
+      headers: {
+        ...authHeaders(),
+      },
       body: formData,
     }
   );
@@ -334,6 +367,9 @@ export async function updateCandidateNotes(
     `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/notes`,
     {
       method: "PATCH",
+      headers: {
+        ...authHeaders(),
+      },
       body: formData,
     }
   );
@@ -356,6 +392,9 @@ export async function updateCandidateTags(
     `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/tags`,
     {
       method: "PATCH",
+      headers: {
+        ...authHeaders(),
+      },
       body: formData,
     }
   );
@@ -386,7 +425,12 @@ export async function searchCandidates(filters: {
   }
 
   const response = await fetch(
-    `${API_BASE}/api/v1/recruiter/search?${params.toString()}`
+    `${API_BASE}/api/v1/recruiter/search?${params.toString()}`,
+    {
+      headers: {
+        ...authHeaders(),
+      },
+    }
   );
 
   return parseJsonResponse<CandidateSearchResponse>(
@@ -399,7 +443,12 @@ export async function getRecruiterAccountStatus(
   recruiterId: number
 ): Promise<RecruiterAccountStatus> {
   const response = await fetch(
-    `${API_BASE}/api/v1/auth/me/${recruiterId}`
+    `${API_BASE}/api/v1/auth/me/${recruiterId}`,
+    {
+      headers: {
+        ...authHeaders(),
+      },
+    }
   );
 
   return parseJsonResponse<RecruiterAccountStatus>(
@@ -420,6 +469,9 @@ export async function askCopilotQuestion(
     `${API_BASE}/api/v1/copilot/candidate/${candidateId}/chat`,
     {
       method: "POST",
+      headers: {
+        ...authHeaders(),
+      },
       body: formData,
     }
   );
@@ -438,7 +490,12 @@ export async function semanticSearchCandidates(
   params.append("query", query);
 
   const response = await fetch(
-    `${API_BASE}/api/v1/recruiter/semantic-search?${params.toString()}`
+    `${API_BASE}/api/v1/recruiter/semantic-search?${params.toString()}`,
+    {
+      headers: {
+        ...authHeaders(),
+      },
+    }
   );
 
   return parseJsonResponse<SemanticSearchResponse>(
@@ -446,33 +503,6 @@ export async function semanticSearchCandidates(
     "Failed to run semantic candidate search."
   );
 }
-
-export type CandidateComparisonItem = {
-  id: number;
-  candidate_name?: string | null;
-  resume_filename?: string | null;
-  fit_score: number;
-  status: string;
-  bookmarked: boolean;
-  matched_skills?: string | null;
-  missing_skills?: string | null;
-  recommendation?: string | null;
-  strengths?: string | null;
-  red_flags?: string | null;
-  semantic_similarity?: number | null;
-  ats_score?: number | null;
-  skill_score?: number | null;
-  experience_score?: number | null;
-  project_relevance_score?: number | null;
-  seniority_match_score?: number | null;
-};
-
-export type CandidateComparisonResponse = {
-  count: number;
-  top_candidate_id?: number | null;
-  ai_summary?: string | null;
-  candidates: CandidateComparisonItem[];
-};
 
 export async function compareCandidates(
   candidateIds: number[]
@@ -482,7 +512,12 @@ export async function compareCandidates(
   params.append("candidate_ids", candidateIds.join(","));
 
   const response = await fetch(
-    `${API_BASE}/api/v1/recruiter/compare?${params.toString()}`
+    `${API_BASE}/api/v1/recruiter/compare?${params.toString()}`,
+    {
+      headers: {
+        ...authHeaders(),
+      },
+    }
   );
 
   return parseJsonResponse<CandidateComparisonResponse>(
