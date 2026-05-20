@@ -1,0 +1,71 @@
+from fastapi import APIRouter
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
+from app.db.models import AnalysisRecord
+from app.db.models import RecruiterUser
+
+from app.services.auth_dependencies import get_current_recruiter
+
+router = APIRouter(
+    prefix="/api/v1/activity",
+    tags=["activity"],
+)
+
+
+@router.get("/feed")
+def get_activity_feed(
+    db: Session = Depends(get_db),
+    recruiter: RecruiterUser = Depends(get_current_recruiter),
+):
+    records = (
+        db.query(AnalysisRecord)
+        .filter(
+            AnalysisRecord.recruiter_user_id
+            == recruiter.id
+        )
+        .order_by(AnalysisRecord.created_at.desc())
+        .limit(25)
+        .all()
+    )
+
+    feed = []
+
+    for record in records:
+        feed.append(
+            {
+                "id": record.id,
+                "candidate_name": record.candidate_name,
+                "fit_score": record.fit_score,
+                "status": record.status,
+                "created_at": record.created_at,
+                "event_type": "candidate_analysis",
+                "message": (
+                    f"{record.candidate_name or 'Candidate'} "
+                    f"was analyzed with a "
+                    f"{record.fit_score}% fit score."
+                ),
+            }
+        )
+
+        if record.bookmarked:
+            feed.append(
+                {
+                    "id": f"bookmark-{record.id}",
+                    "candidate_name": record.candidate_name,
+                    "fit_score": record.fit_score,
+                    "status": record.status,
+                    "created_at": record.created_at,
+                    "event_type": "candidate_bookmarked",
+                    "message": (
+                        f"{record.candidate_name or 'Candidate'} "
+                        f"was bookmarked by recruiter."
+                    ),
+                }
+            )
+
+    return {
+        "count": len(feed),
+        "activities": feed,
+    }
