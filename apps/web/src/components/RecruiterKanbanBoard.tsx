@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
+
+import {
   getRecruiterDashboard,
   updateCandidateStatus,
   type RecruiterDashboardCandidate,
@@ -70,18 +77,31 @@ export default function RecruiterKanbanBoard() {
     return groups;
   }, [candidates]);
 
-  async function moveCandidate(
-    candidate: RecruiterDashboardCandidate,
-    nextStatus: string
-  ) {
+  async function handleDragEnd(result: DropResult) {
+    if (!result.destination) {
+      return;
+    }
+
+    const candidateId = Number(result.draggableId);
+
+    const nextStatus = result.destination.droppableId;
+
+    const candidate = candidates.find(
+      (item) => item.id === candidateId
+    );
+
+    if (!candidate) {
+      return;
+    }
+
     const previousCandidates = [...candidates];
 
     try {
-      setSavingId(candidate.id);
+      setSavingId(candidateId);
 
       setCandidates((current) =>
         current.map((item) =>
-          item.id === candidate.id
+          item.id === candidateId
             ? {
                 ...item,
                 status: nextStatus,
@@ -90,10 +110,15 @@ export default function RecruiterKanbanBoard() {
         )
       );
 
-      await updateCandidateStatus(candidate.id, nextStatus);
+      await updateCandidateStatus(
+        candidateId,
+        nextStatus
+      );
     } catch (err) {
       console.error(err);
+
       setCandidates(previousCandidates);
+
       setError("Failed to update candidate status.");
     } finally {
       setSavingId(null);
@@ -121,8 +146,7 @@ export default function RecruiterKanbanBoard() {
           </h3>
 
           <p className="mt-2 text-sm text-slate-300">
-            Move candidates through recruiter stages. Changes save to the
-            backend.
+            Drag candidates between recruiter stages.
           </p>
         </div>
 
@@ -141,78 +165,95 @@ export default function RecruiterKanbanBoard() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-5">
-        {STATUSES.map((status) => (
-          <div
-            key={status}
-            className="rounded-2xl border border-white/10 bg-black/30 p-4"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h4 className="font-bold text-white">
-                {statusLabel(status)}
-              </h4>
-
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-300">
-                {groupedCandidates[status]?.length || 0}
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {(groupedCandidates[status] || []).map((candidate) => (
-                <article
-                  key={candidate.id}
-                  className="rounded-2xl border border-white/10 bg-slate-950/80 p-4"
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid gap-4 xl:grid-cols-5">
+          {STATUSES.map((status) => (
+            <Droppable
+              droppableId={status}
+              key={status}
+            >
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="rounded-2xl border border-white/10 bg-black/30 p-4 min-h-[500px]"
                 >
-                  <div className="font-bold text-white">
-                    {candidate.candidate_name || "Unnamed Candidate"}
-                  </div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="font-bold text-white">
+                      {statusLabel(status)}
+                    </h4>
 
-                  <div className="mt-1 text-xs text-slate-400">
-                    {candidate.resume_filename || "No resume filename"}
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="rounded-xl bg-emerald-500/15 px-3 py-1 text-sm font-black text-emerald-300">
-                      {candidate.fit_score}%
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-300">
+                      {groupedCandidates[status]?.length || 0}
                     </span>
+                  </div>
 
-                    {candidate.bookmarked ? (
-                      <span className="text-yellow-300">★</span>
+                  <div className="space-y-3">
+                    {(groupedCandidates[status] || []).map(
+                      (candidate, index) => (
+                        <Draggable
+                          draggableId={String(candidate.id)}
+                          index={index}
+                          key={candidate.id}
+                        >
+                          {(provided, snapshot) => (
+                            <article
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`rounded-2xl border border-white/10 bg-slate-950/90 p-4 transition ${
+                                snapshot.isDragging
+                                  ? "scale-105 border-cyan-400 shadow-2xl"
+                                  : ""
+                              }`}
+                            >
+                              <div className="font-bold text-white">
+                                {candidate.candidate_name ||
+                                  "Unnamed Candidate"}
+                              </div>
+
+                              <div className="mt-1 text-xs text-slate-400">
+                                {candidate.resume_filename ||
+                                  "No resume filename"}
+                              </div>
+
+                              <div className="mt-3 flex items-center justify-between">
+                                <span className="rounded-xl bg-emerald-500/15 px-3 py-1 text-sm font-black text-emerald-300">
+                                  {candidate.fit_score}%
+                                </span>
+
+                                {candidate.bookmarked ? (
+                                  <span className="text-yellow-300">
+                                    ★
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {savingId === candidate.id ? (
+                                <div className="mt-3 text-xs text-cyan-300">
+                                  Saving...
+                                </div>
+                              ) : null}
+                            </article>
+                          )}
+                        </Draggable>
+                      )
+                    )}
+
+                    {provided.placeholder}
+
+                    {(groupedCandidates[status] || []).length === 0 ? (
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
+                        No candidates.
+                      </div>
                     ) : null}
                   </div>
-
-                  <select
-                    value={candidate.status}
-                    disabled={savingId === candidate.id}
-                    onChange={(event) =>
-                      moveCandidate(candidate, event.target.value)
-                    }
-                    className="mt-4 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-white"
-                  >
-                    {STATUSES.map((nextStatus) => (
-                      <option key={nextStatus} value={nextStatus}>
-                        {statusLabel(nextStatus)}
-                      </option>
-                    ))}
-                  </select>
-
-                  {savingId === candidate.id ? (
-                    <div className="mt-2 text-xs text-cyan-300">
-                      Saving...
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-
-              {(groupedCandidates[status] || []).length === 0 ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
-                  No candidates.
                 </div>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </div>
+              )}
+            </Droppable>
+          ))}
+        </div>
+      </DragDropContext>
     </section>
   );
 }
