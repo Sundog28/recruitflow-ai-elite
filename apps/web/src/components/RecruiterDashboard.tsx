@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+
 import RecruiterKanbanBoard from "./RecruiterKanbanBoard";
+import ActivityTimeline from "./ActivityTimeline";
 
 import {
   getRecruiterDashboard,
@@ -11,11 +13,13 @@ function RecruiterDashboard() {
     useState<RecruiterDashboardResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   async function loadDashboard() {
     try {
       setLoading(true);
+
       setError("");
 
       const data = await getRecruiterDashboard();
@@ -23,6 +27,7 @@ function RecruiterDashboard() {
       setDashboard(data);
     } catch (err) {
       console.error(err);
+
       setError("Failed to load recruiter dashboard.");
     } finally {
       setLoading(false);
@@ -120,15 +125,17 @@ function RecruiterDashboard() {
 
       <RecruiterKanbanBoard />
 
+      <ActivityTimeline />
+
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">
-              Recent Activity
+              Recent Candidates
             </p>
 
             <h2 className="mt-2 text-2xl font-bold">
-              Recent Candidates
+              Recent Candidate Analyses
             </h2>
           </div>
         </div>
