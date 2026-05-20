@@ -1,4 +1,4 @@
-import { getAccessToken } from "./auth";
+import { getAccessToken, refreshAccessToken } from "./auth";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
