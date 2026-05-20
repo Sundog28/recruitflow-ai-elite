@@ -9,7 +9,7 @@ from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
 
-from app.core.security import decode_access_token
+from app.core.security import decode_token
 
 router = APIRouter(
     prefix="/api/v1/activity",
@@ -33,7 +33,7 @@ def get_current_recruiter(
             "",
         )
 
-        payload = decode_access_token(token)
+        payload = decode_token(token)
 
         email = payload.get("sub")
 
@@ -74,7 +74,7 @@ def get_activity_feed(
     records = (
         db.query(AnalysisRecord)
         .filter(
-            AnalysisRecord.recruiter_user_id
+            AnalysisRecord.recruiter_id
             == recruiter.id
         )
         .order_by(AnalysisRecord.created_at.desc())
