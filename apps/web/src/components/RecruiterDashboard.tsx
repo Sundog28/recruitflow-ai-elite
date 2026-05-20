@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import RecruiterKanbanBoard from "./RecruiterKanbanBoard";
 import ActivityTimeline from "./ActivityTimeline";
 import SemanticCandidateDiscovery from "./SemanticCandidateDiscovery";
+import RecruiterCopilotChat from "./RecruiterCopilotChat";
 
 import {
   getRecruiterDashboard,
@@ -129,6 +130,8 @@ function RecruiterDashboard() {
       <ActivityTimeline />
 
       <SemanticCandidateDiscovery />
+
+      <RecruiterCopilotChat />
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
