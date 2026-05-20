@@ -1,565 +1,145 @@
-import { getAccessToken, refreshAccessToken } from "../lib/auth";
+import { useEffect, useState } from "react";
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  "https://recruitflow-ai-elite-api.onrender.com";
+import {
+  getRecruiterDashboard,
+  RecruiterDashboardResponse,
+} from "../lib/api";
 
-function authHeaders() {
-  const token = getAccessToken();
+function RecruiterDashboard() {
+  const [dashboard, setDashboard] =
+    useState<RecruiterDashboardResponse | null>(null);
 
-  if (!token) {
-    return {};
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        setLoading(true);
+
+        const data = await getRecruiterDashboard();
+
+        setDashboard(data);
+      } catch (err) {
+        console.error(err);
+
+        setError("Failed to load recruiter dashboard.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-6 text-white">
+        Loading dashboard...
+      </div>
+    );
   }
 
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-}
-
-async function fetchWithAuthRetry(
-  input: RequestInfo | URL,
-  init: RequestInit = {}
-) {
-  const response = await fetch(input, init);
-
-  if (response.status !== 401) {
-    return response;
+  if (error) {
+    return (
+      <div className="p-6 text-red-400">
+        {error}
+      </div>
+    );
   }
 
-  const newAccessToken = await refreshAccessToken();
-
-  if (!newAccessToken) {
-    return response;
+  if (!dashboard) {
+    return (
+      <div className="p-6 text-white">
+        No dashboard data found.
+      </div>
+    );
   }
 
-  const retryHeaders = new Headers(init.headers || {});
+  return (
+    <div className="p-6 text-white space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">
+          Recruiter Dashboard
+        </h1>
 
-  retryHeaders.set(
-    "Authorization",
-    `Bearer ${newAccessToken}`
-  );
+        <p className="text-gray-400 mt-2">
+          AI recruiting analytics overview
+        </p>
+      </div>
 
-  return fetch(input, {
-    ...init,
-    headers: retryHeaders,
-  });
-}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <p className="text-gray-400 text-sm">
+            Total Candidates
+          </p>
 
-export type RecruiterUser = {
-  id: number;
-  email: string;
-  full_name?: string;
-  company_name?: string;
-};
+          <p className="text-3xl font-bold mt-2">
+            {dashboard.total_candidates}
+          </p>
+        </div>
 
-export type AuthResponse = {
-  access_token: string;
-  refresh_token: string;
-  token_type?: string;
-  user: RecruiterUser;
-};
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <p className="text-gray-400 text-sm">
+            Average Fit Score
+          </p>
 
-export type CategoryScores = {
-  backend?: number;
-  frontend?: number;
-  ml_ai?: number;
-  cloud_devops?: number;
-  analytics?: number;
-  [key: string]: number | undefined;
-};
+          <p className="text-3xl font-bold mt-2">
+            {dashboard.average_fit_score}
+          </p>
+        </div>
 
-export type AnalyzeResponse = {
-  fit_score: number;
-  predicted_label: string;
-  semantic_similarity: number;
-  matched_skills: string[];
-  missing_skills: string[];
-  strengths: string[];
-  recommendations: string[];
-  candidate_name?: string | null;
-  resume_filename?: string | null;
-  model_version: string;
-  ats_score?: number | null;
-  skill_score?: number | null;
-  experience_score?: number | null;
-  project_relevance_score?: number | null;
-  seniority_match_score?: number | null;
-  confidence_score?: number | null;
-  category_scores?: CategoryScores;
-  red_flags?: string[];
-  hiring_recommendation?: string | null;
-  score_explanation?: string[];
-  share_id?: string | null;
-};
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <p className="text-gray-400 text-sm">
+            Bookmarked Candidates
+          </p>
 
-export type HistoryItem = {
-  id: number;
-  created_at: string;
-  candidate_name?: string | null;
-  resume_filename?: string | null;
-  fit_score: number;
-  predicted_label: string;
-  semantic_similarity: number;
-  matched_skills: string[];
-  missing_skills: string[];
-  recommendations?: string[];
-  confidence_score?: number | null;
-  hiring_recommendation?: string | null;
-  share_id?: string | null;
-};
+          <p className="text-3xl font-bold mt-2">
+            {dashboard.bookmarked_candidates}
+          </p>
+        </div>
+      </div>
 
-export type RecruiterDashboardCandidate = {
-  id: number;
-  candidate_name?: string | null;
-  resume_filename?: string | null;
-  fit_score: number;
-  status: string;
-  bookmarked: boolean;
-  created_at: string;
-  recommendation?: string | null;
-  notes?: string;
-  tags?: string;
-};
+      <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+        <h2 className="text-xl font-semibold mb-4">
+          Recent Candidates
+        </h2>
 
-export type RecruiterDashboardResponse = {
-  total_candidates: number;
-  bookmarked_candidates: number;
-  average_fit_score: number;
-  pipeline: {
-    screening: number;
-    interview: number;
-    offer: number;
-    hired: number;
-    rejected: number;
-    [key: string]: number;
-  };
-  recent_candidates: RecruiterDashboardCandidate[];
-};
+        <div className="space-y-3">
+          {dashboard.recent_candidates.map((candidate) => (
+            <div
+              key={candidate.id}
+              className="border border-zinc-800 rounded-lg p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">
+                    {candidate.candidate_name ||
+                      "Unnamed Candidate"}
+                  </p>
 
-export type CandidateSearchResponse = {
-  count: number;
-  results: RecruiterDashboardCandidate[];
-};
+                  <p className="text-sm text-gray-400">
+                    {candidate.resume_filename}
+                  </p>
+                </div>
 
-export type RewriteResponse = {
-  rewritten_resume: string;
-};
+                <div className="text-right">
+                  <p className="text-green-400 font-bold">
+                    {candidate.fit_score}%
+                  </p>
 
-export type CopilotChatResponse = {
-  candidate_id: number;
-  question: string;
-  answer: string;
-  candidate: {
-    id: number;
-    candidate_name?: string | null;
-    fit_score: number;
-    predicted_label: string;
-  };
-};
-
-export type RecruiterAccountStatus = {
-  id: number;
-  email: string;
-  full_name?: string | null;
-  company_name?: string | null;
-  plan: string;
-  plan_name: string;
-  subscription_status: string;
-  analysis_count: number;
-  analyses_used: number;
-};
-
-export type SemanticSearchResult = {
-  semantic_score: number;
-  candidate: RecruiterDashboardCandidate;
-};
-
-export type SemanticSearchResponse = {
-  query: string;
-  count: number;
-  results: SemanticSearchResult[];
-};
-
-export type CandidateComparisonItem = {
-  id: number;
-  candidate_name?: string | null;
-  resume_filename?: string | null;
-  fit_score: number;
-  status: string;
-  bookmarked: boolean;
-  matched_skills?: string | null;
-  missing_skills?: string | null;
-  recommendation?: string | null;
-  strengths?: string | null;
-  red_flags?: string | null;
-  semantic_similarity?: number | null;
-  ats_score?: number | null;
-  skill_score?: number | null;
-  experience_score?: number | null;
-  project_relevance_score?: number | null;
-  seniority_match_score?: number | null;
-};
-
-export type CandidateComparisonResponse = {
-  count: number;
-  top_candidate_id?: number | null;
-  ai_summary?: string | null;
-  candidates: CandidateComparisonItem[];
-};
-
-async function parseJsonResponse<T>(
-  response: Response,
-  fallbackMessage: string
-): Promise<T> {
-  const text = await response.text();
-
-  if (!response.ok) {
-    try {
-      const data = JSON.parse(text);
-      throw new Error(data.detail || data.message || fallbackMessage);
-    } catch {
-      throw new Error(text || fallbackMessage);
-    }
-  }
-
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error("Server returned invalid JSON.");
-  }
-}
-
-export async function signupRecruiter(
-  email: string,
-  password: string,
-  fullName: string,
-  companyName: string
-): Promise<AuthResponse> {
-  const formData = new FormData();
-
-  formData.append("email", email);
-  formData.append("password", password);
-  formData.append("full_name", fullName);
-  formData.append("company_name", companyName);
-
-  const response = await fetch(`${API_BASE}/api/v1/auth/signup`, {
-    method: "POST",
-    body: formData,
-  });
-
-  return parseJsonResponse<AuthResponse>(
-    response,
-    "Recruiter signup failed."
+                  <p className="text-sm text-gray-400">
+                    {candidate.status}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
-export async function loginRecruiter(
-  email: string,
-  password: string
-): Promise<AuthResponse> {
-  const formData = new FormData();
-
-  formData.append("email", email);
-  formData.append("password", password);
-
-  const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
-    method: "POST",
-    body: formData,
-  });
-
-  return parseJsonResponse<AuthResponse>(
-    response,
-    "Recruiter login failed."
-  );
-}
-
-export async function analyzeResume(
-  jobDescription: string,
-  file: File
-): Promise<AnalyzeResponse> {
-  const formData = new FormData();
-
-  formData.append("job_description", jobDescription);
-  formData.append("resume_file", file);
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/analyze-upload`,
-    {
-      method: "POST",
-      headers: {
-        ...authHeaders(),
-      },
-      body: formData,
-    }
-  );
-
-  return parseJsonResponse<AnalyzeResponse>(
-    response,
-    "Analysis failed."
-  );
-}
-
-export async function rewriteResume(
-  resumeText: string,
-  jobDescription: string
-): Promise<RewriteResponse> {
-  const formData = new FormData();
-
-  formData.append("resume_text", resumeText);
-  formData.append("job_description", jobDescription);
-
-  const response = await fetch(`${API_BASE}/api/v1/rewrite`, {
-    method: "POST",
-    body: formData,
-  });
-
-  return parseJsonResponse<RewriteResponse>(
-    response,
-    "Resume rewrite failed."
-  );
-}
-
-export async function getHistory(): Promise<HistoryItem[]> {
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/history`,
-    {
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse<HistoryItem[]>(
-    response,
-    "Failed to fetch history."
-  );
-}
-
-export async function getRecruiterDashboard(): Promise<RecruiterDashboardResponse> {
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/dashboard`,
-    {
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse<RecruiterDashboardResponse>(
-    response,
-    "Failed to fetch recruiter dashboard."
-  );
-}
-
-export async function toggleCandidateBookmark(candidateId: number) {
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/bookmark`,
-    {
-      method: "PATCH",
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse(
-    response,
-    "Failed to update bookmark."
-  );
-}
-
-export async function updateCandidateStatus(
-  candidateId: number,
-  status: string
-) {
-  const formData = new FormData();
-
-  formData.append("status", status);
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/status`,
-    {
-      method: "PATCH",
-      headers: {
-        ...authHeaders(),
-      },
-      body: formData,
-    }
-  );
-
-  return parseJsonResponse(
-    response,
-    "Failed to update status."
-  );
-}
-
-export async function updateCandidateNotes(
-  candidateId: number,
-  notes: string
-) {
-  const formData = new FormData();
-
-  formData.append("notes", notes);
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/notes`,
-    {
-      method: "PATCH",
-      headers: {
-        ...authHeaders(),
-      },
-      body: formData,
-    }
-  );
-
-  return parseJsonResponse(
-    response,
-    "Failed to update notes."
-  );
-}
-
-export async function updateCandidateTags(
-  candidateId: number,
-  tags: string
-) {
-  const formData = new FormData();
-
-  formData.append("tags", tags);
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/candidates/${candidateId}/tags`,
-    {
-      method: "PATCH",
-      headers: {
-        ...authHeaders(),
-      },
-      body: formData,
-    }
-  );
-
-  return parseJsonResponse(
-    response,
-    "Failed to update candidate tags."
-  );
-}
-
-export async function searchCandidates(filters: {
-  status?: string;
-  min_score?: number;
-  bookmarked?: boolean;
-}): Promise<CandidateSearchResponse> {
-  const params = new URLSearchParams();
-
-  if (filters.status) {
-    params.append("status", filters.status);
-  }
-
-  if (filters.min_score !== undefined) {
-    params.append("min_score", String(filters.min_score));
-  }
-
-  if (filters.bookmarked !== undefined) {
-    params.append("bookmarked", String(filters.bookmarked));
-  }
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/search?${params.toString()}`,
-    {
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse<CandidateSearchResponse>(
-    response,
-    "Failed to search candidates."
-  );
-}
-
-export async function getRecruiterAccountStatus(
-  recruiterId: number
-): Promise<RecruiterAccountStatus> {
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/auth/me/${recruiterId}`,
-    {
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse<RecruiterAccountStatus>(
-    response,
-    "Failed to fetch recruiter account status."
-  );
-}
-
-export async function askCopilotQuestion(
-  candidateId: number,
-  question: string
-): Promise<CopilotChatResponse> {
-  const formData = new FormData();
-
-  formData.append("question", question);
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/copilot/candidate/${candidateId}/chat`,
-    {
-      method: "POST",
-      headers: {
-        ...authHeaders(),
-      },
-      body: formData,
-    }
-  );
-
-  return parseJsonResponse<CopilotChatResponse>(
-    response,
-    "Copilot request failed."
-  );
-}
-
-export async function semanticSearchCandidates(
-  query: string
-): Promise<SemanticSearchResponse> {
-  const params = new URLSearchParams();
-
-  params.append("query", query);
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/semantic-search?${params.toString()}`,
-    {
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse<SemanticSearchResponse>(
-    response,
-    "Failed to run semantic candidate search."
-  );
-}
-
-export async function compareCandidates(
-  candidateIds: number[]
-): Promise<CandidateComparisonResponse> {
-  const params = new URLSearchParams();
-
-  params.append("candidate_ids", candidateIds.join(","));
-
-  const response = await fetchWithAuthRetry(
-    `${API_BASE}/api/v1/recruiter/compare?${params.toString()}`,
-    {
-      headers: {
-        ...authHeaders(),
-      },
-    }
-  );
-
-  return parseJsonResponse<CandidateComparisonResponse>(
-    response,
-    "Failed to compare candidates."
-  );
-}
+export default RecruiterDashboard;
