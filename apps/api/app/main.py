@@ -41,6 +41,7 @@ from app.routes.candidate_comparison import router as candidate_comparison_route
 from app.routes.interview_analysis import router as interview_analysis_router
 from app.routes.candidate_similarity import router as candidate_similarity_router
 from app.routes.executive_analytics import router as executive_analytics_router
+from app.routes.shortlists import router as shortlists_router
 
 configure_sentry()
 configure_logging()
@@ -198,6 +199,7 @@ app.include_router(candidate_comparison_router)
 app.include_router(interview_analysis_router)
 app.include_router(candidate_similarity_router)
 app.include_router(executive_analytics_router)
+app.include_router(shortlists_router)
 
 @app.get("/")
 def root():
