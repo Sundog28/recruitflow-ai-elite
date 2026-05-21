@@ -15,13 +15,12 @@ router = APIRouter(
     tags=["executive-analytics"],
 )
 
-require_paid_plan(recruiter)
-
 @router.get("/summary")
 def get_executive_analytics_summary(
     db: Session = Depends(get_db),
     recruiter: RecruiterUser = Depends(get_current_recruiter),
 ):
+    require_paid_plan(recruiter)
     candidates = (
         db.query(AnalysisRecord)
         .filter(AnalysisRecord.recruiter_id == recruiter.id)
