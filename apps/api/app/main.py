@@ -38,6 +38,7 @@ from app.routes.session import router as session_router
 from app.routes.activity_feed import router as activity_feed_router
 from app.routes.scorecards import router as scorecards_router
 from app.routes.candidate_comparison import router as candidate_comparison_router
+from app.routes.interview_analysis import router as interview_analysis_router
 
 configure_sentry()
 configure_logging()
@@ -192,6 +193,7 @@ app.include_router(session_router)
 app.include_router(activity_feed_router)
 app.include_router(scorecards_router)
 app.include_router(candidate_comparison_router)
+app.include_router(interview_analysis_router)
 
 @app.get("/")
 def root():
