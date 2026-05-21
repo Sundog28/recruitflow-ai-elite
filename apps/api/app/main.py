@@ -44,6 +44,7 @@ from app.routes.executive_analytics import router as executive_analytics_router
 from app.routes.shortlists import router as shortlists_router
 from app.routes.candidate_notes import router as candidate_notes_router
 from app.routes.hiring_packets import router as hiring_packets_router
+from app.routes.billing_status import router as billing_status_router
 
 configure_sentry()
 configure_logging()
@@ -204,6 +205,7 @@ app.include_router(executive_analytics_router)
 app.include_router(shortlists_router)
 app.include_router(candidate_notes_router)
 app.include_router(hiring_packets_router)
+app.include_router(billing_status_router)
 
 @app.get("/")
 def root():
