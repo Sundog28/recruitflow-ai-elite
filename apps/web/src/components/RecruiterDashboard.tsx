@@ -6,6 +6,9 @@ import SemanticCandidateDiscovery from "./SemanticCandidateDiscovery";
 import RecruiterCopilotChat from "./RecruiterCopilotChat";
 import CandidateComparisonWorkspace from "./CandidateComparisonWorkspace";
 import ExecutiveAnalyticsDashboard from "./ExecutiveAnalyticsDashboard";
+import CandidateDetailWorkspace from "./CandidateDetailWorkspace";
+import RecruiterCollaborationPanel from "./RecruiterCollaborationPanel";
+import BillingStatusBanner from "./BillingStatusBanner";
 
 import {
   getRecruiterDashboard,
@@ -138,6 +141,12 @@ function RecruiterDashboard() {
       <CandidateComparisonWorkspace />
 
       <ExecutiveAnalyticsDashboard />
+
+      <CandidateDetailWorkspace />
+
+      <RecruiterCollaborationPanel />
+
+      <BillingStatusBanner />
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
