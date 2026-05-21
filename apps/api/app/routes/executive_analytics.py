@@ -4,17 +4,18 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.auth_dependencies import get_current_recruiter
+from app.core.plan_limits import require_paid_plan
 from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
 from app.services.openai_recruiter_service import generate_openai_recruiter_response
-
 
 router = APIRouter(
     prefix="/api/v1/executive-analytics",
     tags=["executive-analytics"],
 )
 
+require_paid_plan(recruiter)
 
 @router.get("/summary")
 def get_executive_analytics_summary(

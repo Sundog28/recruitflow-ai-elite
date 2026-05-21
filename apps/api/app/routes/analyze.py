@@ -18,6 +18,7 @@ from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
 from app.services.scoring_service import ScoringService
+from app.core.plan_limits import enforce_free_analysis_limit
 
 
 router = APIRouter(prefix="/api/v1", tags=["analyze"])
@@ -235,14 +236,7 @@ async def analyze_upload(
         content,
     )
 
-    if (
-        recruiter.plan == "free"
-        and recruiter.analysis_count >= 3
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Free trial limit reached. Upgrade to RecruitFlow Pro.",
-        )
+    enforce_free_analysis_limit(recruiter)
 
     score = ScoringService.score(
         resume_text=resume_text,
