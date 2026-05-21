@@ -5,6 +5,7 @@ import ActivityTimeline from "./ActivityTimeline";
 import SemanticCandidateDiscovery from "./SemanticCandidateDiscovery";
 import RecruiterCopilotChat from "./RecruiterCopilotChat";
 import CandidateComparisonWorkspace from "./CandidateComparisonWorkspace";
+import ExecutiveAnalyticsDashboard from "./ExecutiveAnalyticsDashboard";
 
 import {
   getRecruiterDashboard,
@@ -135,6 +136,8 @@ function RecruiterDashboard() {
       <RecruiterCopilotChat />
 
       <CandidateComparisonWorkspace />
+
+      <ExecutiveAnalyticsDashboard />
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
