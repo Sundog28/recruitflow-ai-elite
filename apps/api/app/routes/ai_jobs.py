@@ -13,6 +13,8 @@ from app.services.redis_job_store import (
     list_jobs,
 )
 
+from app.services.job_reliability_service import create_reliable_job_payload
+
 
 router = APIRouter(
     prefix="/api/v1/ai-jobs",
@@ -52,9 +54,12 @@ def queue_ai_candidate_summary(
 ):
     job = create_job(
         job_type="ai_candidate_summary",
-        payload={
-            "candidate_id": candidate_id,
-        },
+        payload=create_reliable_job_payload(
+            job_type="ai_candidate_summary",
+            payload={
+                "candidate_id": candidate_id,
+            },
+        ),
     )
 
     queue_result = try_enqueue_with_rq(
@@ -85,10 +90,13 @@ def queue_ai_interview_evaluation(
 ):
     job = create_job(
         job_type="ai_interview_evaluation",
-        payload={
-            "candidate_id": candidate_id,
-            "interview_notes": interview_notes,
-        },
+        payload=create_reliable_job_payload(
+            job_type="ai_interview_evaluation",
+            payload={
+                "candidate_id": candidate_id,
+                "interview_notes": interview_notes,
+            },
+        ),
     )
 
     queue_result = try_enqueue_with_rq(
