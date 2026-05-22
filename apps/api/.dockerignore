@@ -1,5 +1,14 @@
-.venv
 __pycache__
 *.pyc
-uploads
-recruitflow.db
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+venv
+.env.*
+.pytest_cache
+.mypy_cache
+.git
+.gitignore
+tests
