@@ -11,8 +11,7 @@ from app.core.logging_config import configure_logging
 from app.core.request_logging import RequestLoggingMiddleware
 from app.core.sentry_config import configure_sentry
 
-from app.db.database import Base
-from app.db.database import engine
+from app.db.database import Base, engine
 from app.db import models
 
 from app.routes.analyze import router as analyze_router
@@ -48,6 +47,7 @@ from app.routes.billing_status import router as billing_status_router
 from app.routes.stripe_checkout import router as stripe_checkout_router
 from app.routes.stripe_webhooks import router as stripe_webhooks_router
 from app.routes.stripe_billing_portal import router as stripe_billing_portal_router
+from app.routes.job_status import router as job_status_router
 
 configure_sentry()
 configure_logging()
@@ -63,7 +63,6 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN recruiter_notes TEXT",
         "ALTER TABLE analysis_records ADD COLUMN candidate_tags TEXT",
         "ALTER TABLE analysis_records ADD COLUMN bookmarked BOOLEAN DEFAULT false",
-
         "ALTER TABLE recruiter_users ADD COLUMN team_id INTEGER",
         "ALTER TABLE recruiter_users ADD COLUMN role VARCHAR(50) DEFAULT 'recruiter'",
         "ALTER TABLE recruiter_users ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
@@ -72,20 +71,16 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN analyses_used INTEGER DEFAULT 0",
-
         "CREATE EXTENSION IF NOT EXISTS vector",
-
         "ALTER TABLE analysis_records ADD COLUMN embedding_text TEXT",
         "ALTER TABLE analysis_records ADD COLUMN embedding_model VARCHAR(100)",
         "ALTER TABLE analysis_records ADD COLUMN candidate_embedding vector(384)",
-
         "ALTER TABLE recruiter_teams ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_teams ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_customer_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_count INTEGER DEFAULT 1",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_limit INTEGER DEFAULT 1",
-
         """
         CREATE TABLE recruiter_invitations (
             id SERIAL PRIMARY KEY,
@@ -99,7 +94,6 @@ def run_startup_migrations():
             accepted_at TIMESTAMP NULL
         )
         """,
-
         """
         CREATE TABLE team_candidate_comments (
             id SERIAL PRIMARY KEY,
@@ -111,7 +105,6 @@ def run_startup_migrations():
             visibility VARCHAR(50) DEFAULT 'team'
         )
         """,
-
         """
         CREATE TABLE team_role_permissions (
             id SERIAL PRIMARY KEY,
@@ -125,7 +118,6 @@ def run_startup_migrations():
             can_invite_recruiters BOOLEAN DEFAULT FALSE
         )
         """,
-
         """
         CREATE TABLE team_audit_logs (
             id SERIAL PRIMARY KEY,
@@ -144,22 +136,18 @@ def run_startup_migrations():
     for query in migration_queries:
         try:
             print(f"RUNNING MIGRATION: {query}")
-
             with engine.begin() as connection:
                 connection.execute(text(query))
-
-        except Exception as e:
-            print(f"MIGRATION SKIPPED: {e}")
+        except Exception as error:
+            print(f"MIGRATION SKIPPED: {error}")
 
 
 run_startup_migrations()
-
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
     version="2.8.0",
 )
-
 
 app.state.limiter = limiter
 
@@ -168,7 +156,6 @@ app.add_exception_handler(
     _rate_limit_exceeded_handler,
 )
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -176,8 +163,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RequestLoggingMiddleware)
 
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
@@ -212,6 +199,8 @@ app.include_router(billing_status_router)
 app.include_router(stripe_checkout_router)
 app.include_router(stripe_webhooks_router)
 app.include_router(stripe_billing_portal_router)
+app.include_router(job_status_router)
+
 
 @app.get("/")
 def root():

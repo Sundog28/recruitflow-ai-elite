@@ -5,10 +5,18 @@ import os
 
 from fastapi import HTTPException
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
 try:
     import redis
 except Exception:
     redis = None
+
+
+limiter = Limiter(
+    key_func=get_remote_address,
+)
 
 
 RATE_LIMIT_STORE = defaultdict(list)
