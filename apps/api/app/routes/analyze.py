@@ -19,7 +19,7 @@ from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
 from app.services.scoring_service import ScoringService
 from app.core.plan_limits import enforce_free_analysis_limit
-
+from app.services.audit_log_service import create_audit_log
 
 router = APIRouter(prefix="/api/v1", tags=["analyze"])
 
@@ -305,4 +305,16 @@ async def analyze_upload(
 
     db.commit()
 
+    create_audit_log(
+        recruiter_id=recruiter.id,
+        event_type="candidate_analysis",
+        action="Analyzed candidate resume",
+        resource_type="candidate",
+        resource_id=db_record.id,
+        metadata={
+            "candidate_name": db_record.candidate_name,
+            "fit_score": db_record.fit_score,
+            "resume_filename": db_record.resume_filename,
+        },
+    )
     return result
