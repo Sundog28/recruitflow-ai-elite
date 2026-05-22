@@ -50,6 +50,7 @@ from app.routes.stripe_billing_portal import router as stripe_billing_portal_rou
 from app.routes.job_status import router as job_status_router
 from app.routes.audit_logs import router as audit_logs_router
 from app.routes.worker_health import router as worker_health_router
+from app.routes.metrics import router as metrics_router
 
 configure_sentry()
 configure_logging()
@@ -204,6 +205,7 @@ app.include_router(stripe_billing_portal_router)
 app.include_router(job_status_router)
 app.include_router(audit_logs_router)
 app.include_router(worker_health_router)
+app.include_router(metrics_router)
 
 @app.get("/")
 def root():
