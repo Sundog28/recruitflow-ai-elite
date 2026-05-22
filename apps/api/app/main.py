@@ -47,6 +47,7 @@ from app.routes.hiring_packets import router as hiring_packets_router
 from app.routes.billing_status import router as billing_status_router
 from app.routes.stripe_checkout import router as stripe_checkout_router
 from app.routes.stripe_webhooks import router as stripe_webhooks_router
+from app.routes.stripe_billing_portal import router as stripe_billing_portal_router
 
 configure_sentry()
 configure_logging()
@@ -210,6 +211,7 @@ app.include_router(hiring_packets_router)
 app.include_router(billing_status_router)
 app.include_router(stripe_checkout_router)
 app.include_router(stripe_webhooks_router)
+app.include_router(stripe_billing_portal_router)
 
 @app.get("/")
 def root():
