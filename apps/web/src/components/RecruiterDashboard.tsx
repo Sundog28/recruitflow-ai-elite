@@ -10,6 +10,7 @@ import CandidateDetailWorkspace from "./CandidateDetailWorkspace";
 import RecruiterCollaborationPanel from "./RecruiterCollaborationPanel";
 import BillingStatusBanner from "./BillingStatusBanner";
 import StripeBillingActions from "./StripeBillingActions";
+import PaidFeatureGuard from "./PaidFeatureGuard";
 
 import {
   getRecruiterDashboard,
@@ -135,13 +136,37 @@ function RecruiterDashboard() {
 
       <ActivityTimeline />
 
-      <SemanticCandidateDiscovery />
+      <PaidFeatureGuard
+        featureKey="semantic_discovery"
+        title="Semantic Candidate Discovery"
+        description="Unlock natural language candidate search and AI-ranked shortlists."
+      >
+        <SemanticCandidateDiscovery />
+      </PaidFeatureGuard>
 
-      <RecruiterCopilotChat />
+      <PaidFeatureGuard
+        featureKey="ai_recruiter_copilot"
+        title="AI Recruiter Copilot"
+        description="Unlock recruiter chat intelligence, interview planning, and hiring recommendations."
+      >
+        <RecruiterCopilotChat />
+      </PaidFeatureGuard>
 
-      <CandidateComparisonWorkspace />
+      <PaidFeatureGuard
+        featureKey="candidate_comparison"
+        title="AI Candidate Comparison"
+        description="Unlock side-by-side candidate comparison and strategic hiring recommendations."
+      >
+        <CandidateComparisonWorkspace />
+      </PaidFeatureGuard>
 
-      <ExecutiveAnalyticsDashboard />
+      <PaidFeatureGuard
+        featureKey="executive_analytics"
+        title="Executive Analytics"
+        description="Unlock leadership dashboards, pipeline health insights, and AI executive summaries."
+      >
+        <ExecutiveAnalyticsDashboard />
+      </PaidFeatureGuard>
 
       <CandidateDetailWorkspace />
 
