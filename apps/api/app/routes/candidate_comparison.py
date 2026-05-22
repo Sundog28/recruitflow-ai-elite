@@ -5,6 +5,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.auth_dependencies import get_current_recruiter
+from app.core.rate_limit import enforce_rate_limit
+from app.core.rate_limit import recruiter_rate_limit_key
 from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
@@ -29,6 +31,14 @@ def compare_candidates(
         get_current_recruiter
     ),
 ):
+    require_paid_plan(recruiter)
+    enforce_rate_limit(
+        recruiter_rate_limit_key(
+            recruiter_id=recruiter.id,
+            feature_name="candidate_comparison",
+        )
+    )
+
     candidate_1 = (
         db.query(AnalysisRecord)
         .filter(AnalysisRecord.id == candidate_id_1)

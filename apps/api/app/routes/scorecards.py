@@ -3,6 +3,8 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.auth_dependencies import get_current_recruiter
+from app.core.rate_limit import enforce_rate_limit
+from app.core.rate_limit import recruiter_rate_limit_key
 from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
@@ -20,6 +22,14 @@ def generate_candidate_scorecard(
     db: Session = Depends(get_db),
     recruiter: RecruiterUser = Depends(get_current_recruiter),
 ):
+    require_paid_plan(recruiter)
+    
+    enforce_rate_limit(
+        recruiter_rate_limit_key(recruiter.id, "scorecards"),
+        limit=20,
+        window_seconds=60,
+    )
+
     candidate = (
         db.query(AnalysisRecord)
         .filter(AnalysisRecord.id == candidate_id)

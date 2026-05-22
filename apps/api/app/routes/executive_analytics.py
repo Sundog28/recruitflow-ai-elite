@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.core.auth_dependencies import get_current_recruiter
 from app.core.plan_limits import require_paid_plan
+from app.core.rate_limit import enforce_rate_limit
+from app.core.rate_limit import recruiter_rate_limit_key
 from app.db.database import get_db
 from app.db.models import AnalysisRecord
 from app.db.models import RecruiterUser
@@ -21,6 +23,12 @@ def get_executive_analytics_summary(
     recruiter: RecruiterUser = Depends(get_current_recruiter),
 ):
     require_paid_plan(recruiter)
+    enforce_rate_limit(
+        recruiter_rate_limit_key(recruiter.id, "executive-analytics"),
+        limit=10,
+        window_seconds=60,
+    )
+    
     candidates = (
         db.query(AnalysisRecord)
         .filter(AnalysisRecord.recruiter_id == recruiter.id)
