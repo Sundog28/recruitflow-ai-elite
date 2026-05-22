@@ -1,42 +1,51 @@
-name: CI
+name: RecruitFlow CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - stripe-subscription-sync-v12
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
-  backend:
+  backend-checks:
+    name: Backend Compile Check
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: apps/api
+
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Import smoke test
+      - name: Compile backend
         run: |
-          python -c "import fastapi, sqlalchemy, pydantic, pypdf, docx; print('backend ok')"
+          python -m compileall app
 
-  frontend:
+  frontend-checks:
+    name: Frontend Build Check
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: apps/web
+
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Node
@@ -44,8 +53,8 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        run: npm ci
 
       - name: Build frontend
         run: npm run build
