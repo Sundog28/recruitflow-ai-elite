@@ -9,8 +9,6 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 
-from pgvector.sqlalchemy import Vector
-
 from app.db.database import Base
 
 
@@ -277,4 +275,67 @@ class AnalysisRecord(Base):
     # all-MiniLM-L6-v2 creates 384-dimensional vectors.
     # Later, if we switch to OpenAI text-embedding-3-small,
     # this should become Vector(1536).
-    candidate_embedding = Column(Vector(384), nullable=True)
+    candidate_embedding = Column(Text, nullable=True)
+
+class JobRequisition(Base):
+    __tablename__ = "job_requisitions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    recruiter_id = Column(
+        Integer,
+        ForeignKey("recruiter_users.id"),
+        nullable=True,
+    )
+
+    team_id = Column(
+        Integer,
+        ForeignKey("recruiter_teams.id"),
+        nullable=True,
+    )
+
+    title = Column(String(255), nullable=False)
+    company_name = Column(String(255), nullable=True)
+    department = Column(String(255), nullable=True)
+    location = Column(String(255), nullable=True)
+
+    employment_type = Column(String(100), default="Full-time")
+    workplace_type = Column(String(100), default="Remote")
+
+    status = Column(String(50), default="open")
+    priority = Column(String(50), default="medium")
+
+    salary_min = Column(Float, nullable=True)
+    salary_max = Column(Float, nullable=True)
+
+    description = Column(Text, nullable=False)
+    required_skills = Column(Text, nullable=True)
+    nice_to_have_skills = Column(Text, nullable=True)
+
+    target_seniority = Column(String(100), nullable=True)
+    hiring_manager = Column(String(255), nullable=True)
+
+    candidates_attached = Column(Integer, default=0)
+
+class JobCandidateLink(Base):
+    __tablename__ = "job_candidate_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    job_id = Column(
+        Integer,
+        ForeignKey("job_requisitions.id"),
+        nullable=False,
+    )
+
+    candidate_id = Column(
+        Integer,
+        ForeignKey("analysis_records.id"),
+        nullable=False,
+    )
+
+    ai_match_score = Column(Float, default=0.0)
+    ranking_notes = Column(Text, nullable=True)
+    status = Column(String(50), default="attached")

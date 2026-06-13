@@ -1,3 +1,6 @@
+<img width="1173" height="1984" alt="image" src="https://github.com/user-attachments/assets/e440de69-7221-420c-8508-ab17fa80e70e" />
+
+
 # RecruitFlow AI Elite
 
 RecruitFlow AI Elite is a recruiter-facing AI/ML portfolio project that analyzes resume-job fit using a production-style full-stack architecture.
