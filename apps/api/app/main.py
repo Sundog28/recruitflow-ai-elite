@@ -51,6 +51,9 @@ from app.routes.job_status import router as job_status_router
 from app.routes.audit_logs import router as audit_logs_router
 from app.routes.worker_health import router as worker_health_router
 from app.routes.metrics import router as metrics_router
+from app.routes import job_requisitions
+from app.routes import job_candidates
+
 
 configure_sentry()
 configure_logging()
@@ -66,6 +69,8 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN recruiter_notes TEXT",
         "ALTER TABLE analysis_records ADD COLUMN candidate_tags TEXT",
         "ALTER TABLE analysis_records ADD COLUMN bookmarked BOOLEAN DEFAULT false",
+
+        "ALTER TABLE recruiter_users ADD COLUMN hashed_password VARCHAR(255)",
         "ALTER TABLE recruiter_users ADD COLUMN team_id INTEGER",
         "ALTER TABLE recruiter_users ADD COLUMN role VARCHAR(50) DEFAULT 'recruiter'",
         "ALTER TABLE recruiter_users ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
@@ -73,17 +78,23 @@ def run_startup_migrations():
         "ALTER TABLE recruiter_users ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_users ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'",
+        "ALTER TABLE recruiter_users ADD COLUMN analysis_count INTEGER DEFAULT 0",
         "ALTER TABLE recruiter_users ADD COLUMN analyses_used INTEGER DEFAULT 0",
+        "ALTER TABLE recruiter_users ADD COLUMN is_active BOOLEAN DEFAULT true",
+
         "CREATE EXTENSION IF NOT EXISTS vector",
+
         "ALTER TABLE analysis_records ADD COLUMN embedding_text TEXT",
         "ALTER TABLE analysis_records ADD COLUMN embedding_model VARCHAR(100)",
-        "ALTER TABLE analysis_records ADD COLUMN candidate_embedding vector(384)",
+        "ALTER TABLE analysis_records ADD COLUMN candidate_embedding TEXT",
+
         "ALTER TABLE recruiter_teams ADD COLUMN plan_name VARCHAR(100) DEFAULT 'free'",
         "ALTER TABLE recruiter_teams ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'free'",
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_customer_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN stripe_subscription_id VARCHAR(255)",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_count INTEGER DEFAULT 1",
         "ALTER TABLE recruiter_teams ADD COLUMN seat_limit INTEGER DEFAULT 1",
+
         """
         CREATE TABLE recruiter_invitations (
             id SERIAL PRIMARY KEY,
@@ -97,6 +108,7 @@ def run_startup_migrations():
             accepted_at TIMESTAMP NULL
         )
         """,
+
         """
         CREATE TABLE team_candidate_comments (
             id SERIAL PRIMARY KEY,
@@ -108,6 +120,7 @@ def run_startup_migrations():
             visibility VARCHAR(50) DEFAULT 'team'
         )
         """,
+
         """
         CREATE TABLE team_role_permissions (
             id SERIAL PRIMARY KEY,
@@ -121,6 +134,7 @@ def run_startup_migrations():
             can_invite_recruiters BOOLEAN DEFAULT FALSE
         )
         """,
+
         """
         CREATE TABLE team_audit_logs (
             id SERIAL PRIMARY KEY,
@@ -149,7 +163,7 @@ run_startup_migrations()
 
 app = FastAPI(
     title="RecruitFlow AI Elite API",
-    version="2.8.0",
+    version="2.8.1",
 )
 
 app.state.limiter = limiter
@@ -159,19 +173,24 @@ app.add_exception_handler(
     _rate_limit_exceeded_handler,
 )
 
+app.add_middleware(RequestLoggingMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://recruitflow-ai-elite.vercel.app",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.add_middleware(RequestLoggingMiddleware)
-
 app.include_router(analyze_router)
 app.include_router(rewrite_router)
 app.include_router(auth_router)
+app.include_router(auth_refresh_router)
 app.include_router(recruiter_router)
 app.include_router(team_router)
 app.include_router(copilot_router)
@@ -187,7 +206,6 @@ app.include_router(ai_jobs_router)
 app.include_router(resume_ocr_router)
 app.include_router(recruiter_agent_router)
 app.include_router(ai_outreach_router)
-app.include_router(auth_refresh_router)
 app.include_router(session_router)
 app.include_router(activity_feed_router)
 app.include_router(scorecards_router)
@@ -206,6 +224,9 @@ app.include_router(job_status_router)
 app.include_router(audit_logs_router)
 app.include_router(worker_health_router)
 app.include_router(metrics_router)
+app.include_router(job_requisitions.router)
+app.include_router(job_candidates.router)
+
 
 @app.get("/")
 def root():
@@ -219,5 +240,5 @@ def health():
     return {
         "status": "ok",
         "service": "RecruitFlow AI Elite API",
-        "version": "2.8.0",
+        "version": "2.8.1",
     }
