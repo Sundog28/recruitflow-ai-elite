@@ -69,6 +69,7 @@ def run_startup_migrations():
         "ALTER TABLE analysis_records ADD COLUMN recruiter_notes TEXT",
         "ALTER TABLE analysis_records ADD COLUMN candidate_tags TEXT",
         "ALTER TABLE analysis_records ADD COLUMN bookmarked BOOLEAN DEFAULT false",
+        "ALTER TABLE analysis_records ADD COLUMN candidate_embedding TEXT",
 
         "ALTER TABLE recruiter_users ADD COLUMN hashed_password VARCHAR(255)",
         "ALTER TABLE recruiter_users ADD COLUMN team_id INTEGER",
