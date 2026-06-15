@@ -178,11 +178,11 @@ app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"https://recruitflow-ai-elite-.*\.vercel\.app",
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://recruitflow-ai-elite.vercel.app",
-        "https://recruitflow-ai-elite-23h9yttm7-john-treens-projects.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
