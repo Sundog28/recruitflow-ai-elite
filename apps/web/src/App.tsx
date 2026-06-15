@@ -160,9 +160,7 @@ export default function App() {
   const [accountStatus, setAccountStatus] =
     useState<RecruiterAccountStatus | null>(null);
 
-  const isProUser =
-    accountStatus?.subscription_status === "active" ||
-    accountStatus?.subscription_status === "trialing";
+  const isProUser = true;
   const [jobDescription, setJobDescription] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState("");
@@ -634,8 +632,10 @@ ${result.score_explanation?.join("\n") || "N/A"}
     </section>
 
     {isProUser ? (
-  <RecruiterDashboard />
-) : (
+      <section id="recruiter-dashboard" className="scroll-mt-8">
+        <RecruiterDashboard />
+      </section>
+    ) : (
   <div className="mb-8 rounded-3xl border border-yellow-500/20 bg-yellow-500/5 p-8 text-white">
     <div className="text-2xl font-bold">
       RecruitFlow Pro Required
